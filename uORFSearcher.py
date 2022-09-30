@@ -7,7 +7,7 @@ import pandas as pd
 try:
     functionName, file, AA_min, outputPrefix = sys.argv
 except:
-    print("error: AnnotationQC.py <Input file> <Output prefix>")
+    print("error: ORFSearcher.py <Input file> <Minimum ORF size in AA> <Output prefix>")
     quit()
 
 ############# Define OBJECTS ##############
@@ -105,30 +105,15 @@ def find_orfs_in_frame(sequence, threshold, name):
 
 
 def from_orfs_to_gff(orfDict_pos, orfDict_neg, fastaseq,firstORF = 0):
-    colnames = ["chr", "source", "feature", "start", "end", "score", "strand", "frame", "attr"]
+
     frames = [0, 1, 2]
-
-    totalEntries_pos = sum([len(orfList) for orfList in orfDict_pos.values()])
-    totalEntries_neg = sum([len(orfList) for orfList in orfDict_neg.values()])
-
     chr = orfDict_pos[0][0].seqName
-
-    #PandasSeries
 
     Start = []
     End = []
     AttrList = []
 
-
     # + strand
-    gffPos = pd.DataFrame("x", index = range(totalEntries_pos), columns=colnames)
-    gffPos.chr = chr
-    gffPos.source = "ORFSearcher"
-    gffPos.feature = "ORF"
-    gffPos.score = "."
-    gffPos.frame = "."
-    gffPos.strand = "+"
-
     startListOfListsPos = []
     endListOfListsPos = []
     for frame in frames:
@@ -138,9 +123,6 @@ def from_orfs_to_gff(orfDict_pos, orfDict_neg, fastaseq,firstORF = 0):
     startListPos = sum(startListOfListsPos, [])
     endListPos = sum(endListOfListsPos, [])
 
-    gffPos.start = startListPos
-    gffPos.end = endListPos
-
     Start.extend(startListPos)
     End.extend(endListPos)
 
@@ -148,15 +130,8 @@ def from_orfs_to_gff(orfDict_pos, orfDict_neg, fastaseq,firstORF = 0):
     lastORF = ini + len(startListPos)
     attr = ['ID=ORF-' + str(i).zfill(8) for i in range(ini, lastORF)]
     AttrList.extend(attr)
-    gffPos.attr = attr
+
     # - strand
-    gffNeg = pd.DataFrame("x", index = range(totalEntries_neg), columns=colnames)
-    gffNeg.chr = chr
-    gffNeg.source = "ORFSearcher"
-    gffNeg.feature = "ORF"
-    gffNeg.score = "."
-    gffNeg.frame = "."
-    gffNeg.strand = "-"
     startListOfListsNeg = []
     endListOfListsNeg = []
     for frame in frames:
@@ -165,8 +140,6 @@ def from_orfs_to_gff(orfDict_pos, orfDict_neg, fastaseq,firstORF = 0):
 
     startListNeg = len(fastaseq) - pd.array(sum(startListOfListsNeg, [])) + 1
     endListNeg = len(fastaseq) - pd.array(sum(endListOfListsNeg, [])) + 1
-    gffNeg.start = startListNeg
-    gffNeg.end = endListNeg
 
     Start.extend(startListNeg)
     End.extend(endListNeg)
@@ -175,7 +148,6 @@ def from_orfs_to_gff(orfDict_pos, orfDict_neg, fastaseq,firstORF = 0):
     lastORF = ini + len(startListNeg)
     attr = ['ID=ORF-' + str(i).zfill(8) for i in range(ini, lastORF)]
     AttrList.extend(attr)
-    gffNeg.attr = attr
 
     chrList = [chr] * len(Start)
     source = ["ORFSearcher"] * len(Start)
@@ -184,10 +156,6 @@ def from_orfs_to_gff(orfDict_pos, orfDict_neg, fastaseq,firstORF = 0):
     frame = ["."] * len(Start)
     Strand = ["+"] * len(startListPos) + ["-"] * len(startListNeg)
 
-    #gff = pd.concat([gffPos, gffNeg])
-    #gff.index = range(len(startListPos) + len(startListNeg))
-
-    #return(gff)
     return(chrList, source, feature, Start, End, score, Strand, frame, AttrList, lastORF)
 
 
