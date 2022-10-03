@@ -66,7 +66,10 @@ def find_orfs_in_frame(sequence, threshold, name, mode):
             starts_a = find_all_in_frame(sequence[frame:], 'ATG')
             starts_a_gff_adjustment = [x + frame for x in starts_a]
             starts = starts_a_gff_adjustment
-
+            
+        
+		# Bug with mode Stop
+		# This part seems to work 
         elif mode == "Stop":
             stop_amber = find_all_in_frame(sequence[frame:], 'TAG')
             stop_ochre = find_all_in_frame(sequence[frame:], 'TAA')
@@ -124,7 +127,7 @@ def find_orfs_in_frame(sequence, threshold, name, mode):
         orf_dict[frame] = orfs
     return orf_dict
 
-
+# This part does not work with mode == Stop
 def from_orfs_to_gff(orfDict_pos, orfDict_neg, fastaseq,firstORF = 0):
 
     frames = [0, 1, 2]
@@ -207,11 +210,11 @@ frameList = []
 attrList = []
 lastORF = 0
 for sequence in fastaIO:
-    print("Starting ORF search in " + sequence + "...")
+    print("Starting ORF search in " + sequence + "...", flush=True)
     orfDict_Pos = find_orfs_in_frame(str(fastaIO[sequence].seq).upper(), threshold, sequence, mode)
-    print("50 % done in " + sequence)
+    print("50 % done in " + sequence, flush=True)
     orfDict_Neg = find_orfs_in_frame(str(fastaIO[sequence].seq.reverse_complement()).upper(), threshold, sequence, mode)
-    print("All ORFs in " + sequence + " found, finishing last details...")
+    print("All ORFs in " + sequence + " found, finishing last details...", flush=True)
     chr, source, feature, start, end, score, strand, frame, attr, lastORF = from_orfs_to_gff(orfDict_Pos,orfDict_Neg, fastaIO[sequence].seq, lastORF)
     chrList.extend(chr)
     sourceList.extend(source)
