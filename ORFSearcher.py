@@ -1,5 +1,6 @@
 
 import sys
+import time
 from Bio import SeqIO
 import pandas as pd
 
@@ -187,6 +188,9 @@ def from_orfs_to_gff(orfDict_pos, orfDict_neg, fastaseq,firstORF = 0):
 ###### Read each file in the desired directory #######
 ######################################################
 
+start_time = time.time()
+print("Executed at " + time.asctime())
+
 # Input
 fasta = file
 outFile = outputPrefix + "_ORFs.gff3"
@@ -210,11 +214,11 @@ frameList = []
 attrList = []
 lastORF = 0
 for sequence in fastaIO:
-    print("Starting ORF search in " + sequence + "...", flush=True)
+    print("Starting ORF search in " + sequence + "...time: " + str(round(time.time() - start_time),2), flush=True)
     orfDict_Pos = find_orfs_in_frame(str(fastaIO[sequence].seq).upper(), threshold, sequence, mode)
-    print("50 % done in " + sequence, flush=True)
+    print("50 % done in " + sequence + "...time: " + str(round(time.time() - start_time),2), flush=True)
     orfDict_Neg = find_orfs_in_frame(str(fastaIO[sequence].seq.reverse_complement()).upper(), threshold, sequence, mode)
-    print("All ORFs in " + sequence + " found, finishing last details...", flush=True)
+    print("All ORFs in " + sequence + " found, finishing last details..." + "time: " + str(round(time.time() - start_time),2), flush=True)
     chr, source, feature, start, end, score, strand, frame, attr, lastORF = from_orfs_to_gff(orfDict_Pos,orfDict_Neg, fastaIO[sequence].seq, lastORF)
     chrList.extend(chr)
     sourceList.extend(source)
