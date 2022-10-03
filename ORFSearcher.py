@@ -4,10 +4,16 @@ from Bio import SeqIO
 import pandas as pd
 
 try:
-    functionName, file, AA_min, outputPrefix = sys.argv
+    functionName, file, AA_min, mode, outputPrefix = sys.argv
 except:
-    print("error: ORFSearcher.py <Input file> <Minimum ORF size in AA> <Output prefix>")
+    print("error: ORFSearcher.py <Input file> <Minimum ORF size in AA> <Mode, available options 'All' 'ATG' and 'Stop'> <Output prefix>")
     quit()
+
+modeOptions = ['All', 'ATG', 'Stop']
+
+if mode not in mode:
+    print("Mode is not well defined mode set as All")
+    mode = "All"
 
 ############# Define OBJECTS ##############
 class orf_object:
@@ -36,7 +42,7 @@ def find_all_in_frame(sequence, subsequence):
     idxs_1_based = [x+1 for x in idxs]
     return idxs_1_based
 
-def find_orfs_in_frame(sequence, threshold, name):
+def find_orfs_in_frame(sequence, threshold, name, mode):
     """ Finds all valid open reading frames in the string 'sequence' (in frame), and
     returns them as a list"""
 
@@ -44,24 +50,40 @@ def find_orfs_in_frame(sequence, threshold, name):
     frames = [0,1,2]
     for frame in frames:
 
-        starts_a = find_all_in_frame(sequence[frame:], 'ATG')
-        starts_t = find_all_in_frame(sequence[frame:], 'TTG')
-        starts_c = find_all_in_frame(sequence[frame:], 'CTG')
-        starts_g = find_all_in_frame(sequence[frame:], 'GTG')
+        if mode == "All":
+            starts_a = find_all_in_frame(sequence[frame:], 'ATG')
+            starts_t = find_all_in_frame(sequence[frame:], 'TTG')
+            starts_c = find_all_in_frame(sequence[frame:], 'CTG')
+            starts_g = find_all_in_frame(sequence[frame:], 'GTG')
+
+            starts_a_gff_adjustment = [x + frame for x in starts_a]
+            starts_t_gff_adjustment = [x + frame for x in starts_t]
+            starts_c_gff_adjustment = [x + frame for x in starts_c]
+            starts_g_gff_adjustment = [x + frame for x in starts_g]
+
+            starts = starts_a_gff_adjustment + starts_t_gff_adjustment + starts_c_gff_adjustment + starts_g_gff_adjustment
+        elif mode == "ATG":
+            starts_a = find_all_in_frame(sequence[frame:], 'ATG')
+            starts_a_gff_adjustment = [x + frame for x in starts_a]
+            starts = starts_a_gff_adjustment
+
+        elif mode == "Stop":
+            stop_amber = find_all_in_frame(sequence[frame:], 'TAG')
+            stop_ochre = find_all_in_frame(sequence[frame:], 'TAA')
+            stop_umber = find_all_in_frame(sequence[frame:], 'TGA')
+            stop_amber_gff_adjustment = [x + frame for x in stop_amber]
+            stop_ochre_gff_adjustment = [x + frame for x in stop_ochre]
+            stop_umber_gff_adjustment = [x + frame for x in stop_umber]
+            starts = stop_amber_gff_adjustment + stop_ochre_gff_adjustment + stop_umber_gff_adjustment
+
         stop_amber = find_all_in_frame(sequence[frame:], 'TAG')
         stop_ochre = find_all_in_frame(sequence[frame:], 'TAA')
         stop_umber = find_all_in_frame(sequence[frame:], 'TGA')
-
-        starts_a_gff_adjustment = [x + frame for x in starts_a]
-        starts_t_gff_adjustment = [x + frame for x in starts_t]
-        starts_c_gff_adjustment = [x + frame for x in starts_c]
-        starts_g_gff_adjustment = [x + frame for x in starts_g]
 
         stop_amber_gff_adjustment = [x + frame for x in stop_amber]
         stop_ochre_gff_adjustment = [x + frame for x in stop_ochre]
         stop_umber_gff_adjustment = [x + frame for x in stop_umber]
 
-        starts = starts_a_gff_adjustment + starts_t_gff_adjustment + starts_c_gff_adjustment + starts_g_gff_adjustment
         stops = stop_amber_gff_adjustment + stop_ochre_gff_adjustment + stop_umber_gff_adjustment
         starts.sort()
         stops.sort()
@@ -186,9 +208,9 @@ attrList = []
 lastORF = 0
 for sequence in fastaIO:
     print("Starting ORF search in " + sequence + "...")
-    orfDict_Pos = find_orfs_in_frame(str(fastaIO[sequence].seq).upper(), threshold, sequence)
+    orfDict_Pos = find_orfs_in_frame(str(fastaIO[sequence].seq).upper(), threshold, sequence, mode)
     print("50 % done in " + sequence)
-    orfDict_Neg = find_orfs_in_frame(str(fastaIO[sequence].seq.reverse_complement()).upper(), threshold, sequence)
+    orfDict_Neg = find_orfs_in_frame(str(fastaIO[sequence].seq.reverse_complement()).upper(), threshold, sequence, mode)
     print("All ORFs in " + sequence + " found, finishing last details...")
     chr, source, feature, start, end, score, strand, frame, attr, lastORF = from_orfs_to_gff(orfDict_Pos,orfDict_Neg, fastaIO[sequence].seq, lastORF)
     chrList.extend(chr)
