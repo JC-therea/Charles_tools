@@ -193,13 +193,13 @@ print("Executed at " + time.asctime())
 
 # Input
 fasta = file
-outFile = outputPrefix + "_ORFs.gff3"
+outFile = outputPrefix + "." + AA_min + "." + mode + "ORFs.gff3"
 # Read the input as fasta
 fastaIO = SeqIO.index(fasta, "fasta")
 output = "potato.gff"
 
 # Here we change aa threshold
-threshold = AA_min
+threshold = int(AA_min)
 #############################
 colnames = ["chr", "source", "feature", "start", "end", "score", "strand", "frame", "attr"]
 
