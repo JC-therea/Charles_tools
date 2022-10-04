@@ -193,7 +193,7 @@ print("Executed at " + time.asctime())
 
 # Input
 fasta = file
-outFile = outputPrefix + "." + AA_min + "." + mode + "ORFs.gff3"
+outFile = outputPrefix + "." + AA_min + "." + mode + ".ORFs.gff3"
 # Read the input as fasta
 fastaIO = SeqIO.index(fasta, "fasta")
 output = "potato.gff"
