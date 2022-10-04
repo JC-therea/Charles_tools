@@ -129,10 +129,10 @@ def find_orfs_in_frame(sequence, threshold, name, mode):
     return orf_dict
 
 # This part does not work with mode == Stop
-def from_orfs_to_gff(orfDict_pos, orfDict_neg, fastaseq,firstORF = 0):
+def from_orfs_to_gff(orfDict_pos, orfDict_neg, fastaseq, fastaID, firstORF = 0):
 
     frames = [0, 1, 2]
-    chr = orfDict_pos[0][0].seqName
+    chr = fastaID
 
     Start = []
     End = []
@@ -219,7 +219,7 @@ for sequence in fastaIO:
     print("50 % done in " + sequence + "...time: " + str(round(time.time() - start_time,2)), flush=True)
     orfDict_Neg = find_orfs_in_frame(str(fastaIO[sequence].seq.reverse_complement()).upper(), threshold, sequence, mode)
     print("All ORFs in " + sequence + " found, finishing last details..." + "time: " + str(round(time.time() - start_time,2)), flush=True)
-    chr, source, feature, start, end, score, strand, frame, attr, lastORF = from_orfs_to_gff(orfDict_Pos,orfDict_Neg, fastaIO[sequence].seq, lastORF)
+    chr, source, feature, start, end, score, strand, frame, attr, lastORF = from_orfs_to_gff(orfDict_Pos,orfDict_Neg, fastaIO[sequence].seq, sequence, lastORF)
     chrList.extend(chr)
     sourceList.extend(source)
     featureList.extend(feature)
@@ -241,6 +241,8 @@ gff.score = scoreList
 gff.strand = strandList
 gff.frame = frameList
 gff.attr = attrList
+
+print("All done in " + str(round(time.time() - start_time,2)))
 
 gffSorted = gff.sort_values(["chr", "start"], ascending = [True, True])
 gffSorted.attr = ['ID=ORF-' + str(i).zfill(8) for i in range(0, len(gff.attr))]
