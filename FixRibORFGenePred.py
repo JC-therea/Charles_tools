@@ -52,21 +52,18 @@ def realORFcoordinates(exonNumber, strand, transcriptStart, TranscriptEnd, ribOR
             previousSequences = 0
             ORFstartNew = 0
             ORFendNew = 0
-            loopEnd = 0
-            loopStart = 0
+
             for i in range((len(exonStartsSplitted) - 2), -1, -1):
 
                 sizeCurrentBlock = previousSequences + int(exonEndsSplitted[i]) - int(exonStartsSplitted[i])
-                if loopEnd > 2:
-                    loopStart += 2
+
                 if int(ribORFstart) < sizeCurrentBlock and ORFendNew == 0:
 
-                    ORFendNew = int(exonEndsSplitted[i]) - (int(ribORFstart) - previousSequences) + 1 + loopStart
+                    ORFendNew = int(exonEndsSplitted[i]) - (int(ribORFstart) - previousSequences) + 1
 
                 if int(ribORFend) <= (sizeCurrentBlock + 1) and ORFstartNew == 0:
-                    ORFstartNew = int(exonEndsSplitted[i]) - (int(ribORFend) - previousSequences) - 1 + loopEnd
+                    ORFstartNew = int(exonEndsSplitted[i]) - (int(ribORFend) - previousSequences) + 1
                 previousSequences = sizeCurrentBlock
-                loopEnd += 2
             return (ORFstartNew, ORFendNew)
 
 for line in file:
