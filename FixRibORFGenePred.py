@@ -1,5 +1,8 @@
-#file = open("candidateORF.genepred.txt","r")
-#outFile = open("candidateORF.genepred.fixed.txt","w+")
+# We have to do 2 loops
+# THe first one is to annotate all the canonical or prone to be canonical ORFs
+# Then if we were not able to find the canonical or prone to be canonical ORF just do not print it.
+
+
 import sys
 
 try:
