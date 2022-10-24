@@ -30,13 +30,13 @@ def realORFcoordinates(exonNumber, strand, transcriptStart, TranscriptEnd, ribOR
             ORFstartNew = 0
             ORFendNew = 0
             for i in range(0, (len(exonStartsSplitted) - 1)):
-                sizeCurrentBlock = previousSequences + int(exonEndsSplitted[i]) - int(exonStartsSplitted[i]) + 1
+                sizeCurrentBlock = previousSequences + int(exonEndsSplitted[i]) - int(exonStartsSplitted[i])
                 if int(ribORFstart) < sizeCurrentBlock and ORFstartNew == 0:
-                    ORFstartNew = (int(ribORFstart) - previousSequences) + int(exonStartsSplitted[i])
+                    ORFstartNew = (int(ribORFstart) - previousSequences) + int(exonStartsSplitted[i]) - 1
 
-                if int(ribORFend) < sizeCurrentBlock and ORFendNew == 0:
-                    ORFendNew = (int(ribORFend) - previousSequences) + int(exonStartsSplitted[i])
-                previousSequences += sizeCurrentBlock
+                if int(ribORFend) <= (sizeCurrentBlock) and ORFendNew == 0:
+                    ORFendNew = (int(ribORFend) - previousSequences) + int(exonStartsSplitted[i]) - 1
+                previousSequences = sizeCurrentBlock
 
             return(ORFstartNew, ORFendNew)
     else:
@@ -65,7 +65,7 @@ def realORFcoordinates(exonNumber, strand, transcriptStart, TranscriptEnd, ribOR
 
                 if int(ribORFend) <= (sizeCurrentBlock + 1) and ORFstartNew == 0:
                     ORFstartNew = int(exonEndsSplitted[i]) - (int(ribORFend) - previousSequences) - 1 + loopEnd
-                previousSequences += sizeCurrentBlock
+                previousSequences = sizeCurrentBlock
                 loopEnd += 2
             return (ORFstartNew, ORFendNew)
 
