@@ -69,6 +69,28 @@ def realORFcoordinates(exonNumber, strand, transcriptStart, TranscriptEnd, ribOR
                 previousSequences = sizeCurrentBlock
             return (ORFstartNew, ORFendNew)
 
+# First pass check if there is come canonical isoform and store it
+ribORFcanonical = []
+possibleCanonical = []
+for line in file:
+    ribORF, chr, strand, transcriptStart, TranscriptEnd, ORFstart, ORFend, exonNumber, exonStarts, exonEnds = line.split("\t")
+    geneID, ribORFchr, strand_nORF_transcriptLength, ribORFstart, ribORFend_ORFType_StartCodon = ribORF.split(":")
+    ribORFstrand, nORF, transcriptLength = strand_nORF_transcriptLength.split("|")
+    ribORFend, ORFType, StartCodon = ribORFend_ORFType_StartCodon.split("|")
+    ORFtranscriptRelation = (int(ribORFend) - int(ribORFstart)) / int(transcriptLength) * 100
+
+    if ORFType == "canonical":
+        ribORFcanonical.append(geneID)
+    if int(ribORFstart) == 1 and int(transcriptLength) == (int(ribORFend) - 1) and (ORFType == "uORF" or ORFType == "polycistronic"):
+        possibleCanonical.append(geneID)
+    elif int(ribORFstart) == 1 and ORFtranscriptRelation > 20 and ORFType == "uORF" and strand == "-" and geneID not in possibleCanonical:
+        possibleCanonical.append(geneID)
+    elif int(transcriptLength) == (int(ribORFend) - 1) and ORFtranscriptRelation > 20 and ORFType == "polycistronic" and strand == "+" and geneID not in possibleCanonical:
+        possibleCanonical.append(geneID)
+
+file.close()
+file = open(filePath,"r")
+
 for line in file:
     ribORF, chr, strand, transcriptStart, TranscriptEnd, ORFstart, ORFend, exonNumber, exonStarts, exonEnds = line.split("\t")
     geneID, ribORFchr, strand_nORF_transcriptLength, ribORFstart, ribORFend_ORFType_StartCodon = ribORF.split(":")
@@ -77,9 +99,12 @@ for line in file:
 
     ORFtranscriptRelation = (int(ribORFend) - int(ribORFstart)) / int(transcriptLength) * 100
 
-    # Here we fix those transcripts without UTR regions, but only the canonical isoform
+    # Do not store things that do not have an hypotetical canonical isoform
+    if geneID not in ribORFcanonical and geneID not in possibleCanonical:
+        continue
 
-    if int(ribORFstart) == 1 and int(transcriptLength) == (int(ribORFend) - 1) and (ORFType == "uORF" or ORFType == "polycistronic"):
+    # Here we fix those transcripts without UTR regions, but only the canonical isoform
+    elif int(ribORFstart) == 1 and int(transcriptLength) == (int(ribORFend) - 1) and (ORFType == "uORF" or ORFType == "polycistronic"):
         ribORFNEW = geneID +":"+ ribORFchr +":"+ strand_nORF_transcriptLength +":"+ ribORFstart +":"+ ribORFend +"|"+ "canonical" +"|"+ StartCodon
         lineNew = ribORFNEW +"\t"+ chr +"\t"+ strand +"\t"+ transcriptStart +"\t"+ TranscriptEnd +"\t"+ ORFstart +"\t"+ TranscriptEnd +"\t"+ exonNumber +"\t"+ exonStarts +"\t"+ exonEnds
         ORFstartEnd[geneID] = [int(ribORFstart), int(ribORFend)]
