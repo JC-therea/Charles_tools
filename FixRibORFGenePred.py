@@ -41,6 +41,9 @@ def realORFcoordinates(exonNumber, strand, transcriptStart, TranscriptEnd, ribOR
                     ORFendNew = (int(ribORFend) - previousSequences) + int(exonStartsSplitted[i]) - 1
                 previousSequences = sizeCurrentBlock
 
+
+            if ORFendNew == 0:
+                ORFendNew = TranscriptEnd
             return(ORFstartNew, ORFendNew)
     else:
         if int(exonNumber) == 1:
@@ -157,8 +160,12 @@ for line in file:
 
     elif ORFType == "polycistronic" and strand == "+":
         if geneID not in canonicalFrame.keys():
-            outFile.writelines(line)
-            continue
+            if ORFend != "":
+                outFile.writelines(line)
+                continue
+            else:
+                lineNew = ribORF + "\t" + chr + "\t" + strand + "\t" + transcriptStart + "\t" + TranscriptEnd + "\t" + ORFstart + "\t" + TranscriptEnd + "\t" + exonNumber + "\t" + exonStarts + "\t" + exonEnds
+                continue
 
         if canonicalFrame[geneID] == (int(ribORFstart) % 3):
             ORFTypeNew = "truncation"
@@ -170,7 +177,9 @@ for line in file:
         ORFstartNew, ORFendNew = realORFcoordinates(exonNumber, strand, transcriptStart, TranscriptEnd, ribORFstart, exonStarts, exonEnds)
         lineNew = ribORFNEW + "\t" + chr + "\t" + strand + "\t" + transcriptStart + "\t" + TranscriptEnd + "\t" + str(ORFstartNew) + "\t" + str(ORFendNew) + "\t" + exonNumber + "\t" + exonStarts + "\t" + exonEnds
         outFile.writelines(lineNew)
-        # Working on this part
+    # Here we will fix those transcripts without a number on the ORF end
+    elif ORFend == "":
+        lineNew = ribORF + "\t" + chr + "\t" + strand + "\t" + transcriptStart + "\t" + TranscriptEnd + "\t" + ORFstart + "\t" + TranscriptEnd + "\t" + exonNumber + "\t" + exonStarts + "\t" + exonEnds
     else:
         outFile.writelines(line)
 outFile.close()
