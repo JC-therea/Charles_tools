@@ -5,7 +5,7 @@ try:
     functionName, GFFfile, SummaryFile, Node, output = sys.argv
 except:
     print("error: Calculate_transition_matrix.py <GFF file path> <Path to summary file> <Desired Node to study> <Output gff file>")
-    #quit()
+    quit()
 
 #GFFfile = "/home/jmontanes/Documents/0-Important_files/Yeasts/VCF_files/Parsing_SNPs/ORF_GFF/s_cerevisiae_annotations_CDS_v64_1_1_liftOverdone.gff"
 #SummaryFile = "/home/jmontanes/Documents/IQtree_Gene_duplication/Yeasts/Standard_annotation/OutputsR/Summary/YEASTS_gene_summaryshort.tsv"
