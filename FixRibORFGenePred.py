@@ -181,7 +181,7 @@ for line in file:
     elif ORFend == "":
         lineNew = ribORF + "\t" + chr + "\t" + strand + "\t" + transcriptStart + "\t" + TranscriptEnd + "\t" + ORFstart + "\t" + TranscriptEnd + "\t" + exonNumber + "\t" + exonStarts + "\t" + exonEnds
         outFile.writelines(lineNew)
-    elif ORFstart > ORFend:
+    elif int(ORFstart) > int(ORFend):
         lineNew = ribORF + "\t" + chr + "\t" + strand + "\t" + transcriptStart + "\t" + TranscriptEnd + "\t" + ORFend + "\t" + ORFstart + "\t" + exonNumber + "\t" + exonStarts + "\t" + exonEnds
         outFile.writelines(lineNew)
     else:
