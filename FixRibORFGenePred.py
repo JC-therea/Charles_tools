@@ -180,6 +180,10 @@ for line in file:
     # Here we will fix those transcripts without a number on the ORF end
     elif ORFend == "":
         lineNew = ribORF + "\t" + chr + "\t" + strand + "\t" + transcriptStart + "\t" + TranscriptEnd + "\t" + ORFstart + "\t" + TranscriptEnd + "\t" + exonNumber + "\t" + exonStarts + "\t" + exonEnds
+        outFile.writelines(lineNew)
+    elif ORFstart > ORFend:
+        lineNew = ribORF + "\t" + chr + "\t" + strand + "\t" + transcriptStart + "\t" + TranscriptEnd + "\t" + ORFend + "\t" + ORFstart + "\t" + exonNumber + "\t" + exonStarts + "\t" + exonEnds
+        outFile.writelines(lineNew)
     else:
         outFile.writelines(line)
 outFile.close()
