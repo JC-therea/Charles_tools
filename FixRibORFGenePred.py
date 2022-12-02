@@ -103,7 +103,7 @@ for line in file:
     ORFtranscriptRelation = (int(ribORFend) - int(ribORFstart)) / int(transcriptLength) * 100
 
     # Do not store things that do not have an hypotetical canonical isoform
-    if geneID not in ribORFcanonical and geneID not in possibleCanonical:
+    if geneID not in ribORFcanonical and geneID not in possibleCanonical and ORFType != "noncoding":
         continue
 
     # Here we fix those transcripts without UTR regions, but only the canonical isoform

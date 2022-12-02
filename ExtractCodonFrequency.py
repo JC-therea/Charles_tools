@@ -27,7 +27,7 @@ codonDict = {"AAA":0, "AAT":0, "AAC":0, "AAG":0,
 "GAA":0, "GAT":0, "GAC":0, "GAG":0,
 "GTA":0, "GTT":0, "GTC":0, "GTG":0,
 "GCA":0, "GCT":0, "GCC":0, "GCG":0,
-"GGA":0, "GGT":0, "GGC":0, "GGG":0,
+"GGA":0, "GGT":0, "GGC":0, "GGG":0
              }
 
 def trinucleotideParser(nuclSeq):
@@ -48,7 +48,7 @@ def trinucleotideParser(nuclSeq):
                  "GAA": 0, "GAT": 0, "GAC": 0, "GAG": 0,
                  "GTA": 0, "GTT": 0, "GTC": 0, "GTG": 0,
                  "GCA": 0, "GCT": 0, "GCC": 0, "GCG": 0,
-                 "GGA": 0, "GGT": 0, "GGC": 0, "GGG": 0,
+                 "GGA": 0, "GGT": 0, "GGC": 0, "GGG": 0
                  }
     while pos < seqLen:
         codon = nuclSeq[pos:(pos + 3)]
@@ -69,7 +69,11 @@ for transcript in sequences:
     codonDictTranscript = trinucleotideParser(str(sequences[transcript].seq))
     dfpd[transcript] = dfpd.index.map(codonDictTranscript)
 
-dfpd["AbsolutFrequencies"] = dfpd.sum(axis=1)
-dfpd["RelativeFrequencies"] = dfpd.sum(axis=1) / len(transcriptID_list)
+dfpd_noStops = dfpd.drop(["TAG","TGA","TAA"])
 
-dfpd.to_csv(out, sep="\t", index=True, header=True)
+AbsolutFrequencies = dfpd_noStops.sum(axis=1)
+RelativeFrequencies = AbsolutFrequencies / sum(AbsolutFrequencies)
+dfpd_noStops["AbsolutFrequencies"] = AbsolutFrequencies
+dfpd_noStops["RelativeFrequencies"] = RelativeFrequencies
+
+dfpd_noStops.to_csv(out, sep="\t", index=True, header=True)
