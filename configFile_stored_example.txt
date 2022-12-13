@@ -1,0 +1,4 @@
+Nodes=N0,N1
+Species=Drosophila_melanogaster
+MSAdir=/home/jmontanes/Documents/IQtree_Gene_duplication/Insects/Standard_annotation/Proteomes/OrthoFinder/Results_MSA_IQtree_bigmem/MultipleSequenceAlignments/
+SummaryTable=/home/jmontanes/Documents/IQtree_Gene_duplication/Insects/Standard_annotation/OutputsR/Summary/INSECTS_gene_summaryshort.tsv
