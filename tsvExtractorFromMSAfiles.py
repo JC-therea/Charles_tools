@@ -167,5 +167,5 @@ if args.mode == 1:
 
         outFilepd = pd.DataFrame(AlignmentsPais.items(), columns=['Alignment', 'Hits'])
         outFilePath = args.outFile + node + "_" + sps1  + "_singleDuplicates.tsv"
-        print(f' For this analysis {OGs_used} orthogroups were used')
+        print(f' For node {node} {OGs_used} orthogroups were used')
         outFilepd.to_csv(outFilePath, sep="\t", index=False)
