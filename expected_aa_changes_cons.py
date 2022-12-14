@@ -3,19 +3,19 @@ import pandas as pd
 
 parser = argparse.ArgumentParser(description="This program calculates a neutral model of amino acid substitutions and it compares it with the observations",
 								 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("-c", "--codons", default="0", type=str, help="path of the codon estimation file")
-parser.add_argument("-ns", "--nucleotideSubstitution", default="0", type=str, help="nucleotide substitutions matrix in the species (typically from introns)")
-parser.add_argument("-i", "--inputFiles", default=0, type=int, help="Add different tsv files with the codon change frequency")
-parser.add_argument("-o", "--outFile", default="", type=str, help="Name of the output file")
+parser.add_argument("-c", "--codons", default="0", type=str, help="path of the codon estimation file", required=True)
+parser.add_argument("-ns", "--nucleotideSubstitution", default="0", type=str, help="nucleotide substitutions matrix in the species (typically from introns)", required=True)
+parser.add_argument("-i", "--inputFiles", nargs='+', help="Add different tsv files with the codon change frequency", required=False)
+parser.add_argument("-o", "--outFile", default="", type=str, help="Name of the output file", required=False)
 
 args = parser.parse_args()
-#file_cod = args.codons
-file_cod = "/home/jmontanes/Documents/IQtree_Gene_duplication/Insects/DropboxThings/gain_of_acidic_residues/gain_of_acidic_residues/neutral_changes/codons.txt"
-#file_align_list = args.inputFiles.split(",")
+file_cod = args.codons
+#file_cod = "/home/jmontanes/Documents/IQtree_Gene_duplication/Insects/DropboxThings/gain_of_acidic_residues/gain_of_acidic_residues/neutral_changes/codons.txt"
+file_align_list = args.inputFiles
 
-file_align1="/home/jmontanes/Documents/IQtree_Gene_duplication/Insects/DropboxThings/gain_of_acidic_residues/gain_of_acidic_residues/AlignmentChangesN1_Drosophila_sechelia.tsv"
-file_align2="/home/jmontanes/Documents/IQtree_Gene_duplication/Insects/DropboxThings/gain_of_acidic_residues/gain_of_acidic_residues/AlignmentChangesN1_Drosophila_simulans.tsv"
-file_align_list = [file_align1, file_align2]
+#file_align1="/home/jmontanes/Documents/IQtree_Gene_duplication/Insects/DropboxThings/gain_of_acidic_residues/gain_of_acidic_residues/AlignmentChangesN1_Drosophila_sechelia.tsv"
+#file_align2="/home/jmontanes/Documents/IQtree_Gene_duplication/Insects/DropboxThings/gain_of_acidic_residues/gain_of_acidic_residues/AlignmentChangesN1_Drosophila_simulans.tsv"
+#file_align_list = [file_align1, file_align2]
 aa={
 "A" : 1, "C" : 2, "D" : 3, "E" : 4, "F" : 5, "G" : 6, "H" : 7, "I" : 8, "K" : 9, "L" : 10,
 "M" : 11, "N" : 12, "P" : 13, "Q" : 14, "R" : 15, "S" : 16, "T" : 17, "V" : 18, "W" : 19, "Y" : 20
@@ -51,8 +51,8 @@ genet={"TTT":"F", "TTC":"F", "TTA":"L", "TTG":"L",
 #for set of N1 proteins: python3 expected_aa_changes.py codons.txt AlignmentChangesN1_Drosophila_sechelia.tsv AlignmentChangesN1_Drosophila_simulans.tsv
 
 ###### Get the dictionary from tsv file
-#transitionMatrix = pd.read_csv(args.nucleotideSubstitution, sep="\t", header=0, index_col=0)
-transitionMatrix = pd.read_csv("/home/jmontanes/Documents/0-Important_files/Insecta/PNPS/Transition_matrix_introns_full_info.tsv", sep="\t", header=0, index_col=0)
+transitionMatrix = pd.read_csv(args.nucleotideSubstitution, sep="\t", header=0, index_col=0)
+#transitionMatrix = pd.read_csv("/home/jmontanes/Documents/0-Important_files/Insecta/PNPS/Transition_matrix_introns_full_info.tsv", sep="\t", header=0, index_col=0)
 totalCases = transitionMatrix.sum().sum()
 
 subs={
