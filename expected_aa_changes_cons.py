@@ -413,7 +413,8 @@ for AA in aa_list:
 	prob[pair] = 0
 
 # store the expected probabilities in a file (with direction of change)
-pd.DataFrame.from_dict(prob, orient="index").to_csv('neutral_model_probabilities.tsv', sep="\t", header=False)
+outName = args.outFile + 'neutral_model_probabilities.tsv'
+pd.DataFrame.from_dict(prob, orient="index").to_csv(outName, sep="\t", header=False)
 
 #########################################################################################################
 #### calculate expected probabilities (with no direction of change, AE=EA) and compare with observed ####
@@ -431,7 +432,8 @@ for i in range(len(aa_list)):
 			removed=probNoDir.pop(aa_pair2) # remove second pair from the hash
 
 # store the expected probabilities in a file (with no direction of change)
-pd.DataFrame.from_dict(probNoDir, orient="index").to_csv('neutral_model_probabilities_nodirectionofchange.tsv', sep="\t", header=False)
+outName = args.outFile + 'neutral_model_probabilities_nodirectionofchange.tsv'
+pd.DataFrame.from_dict(probNoDir, orient="index").to_csv(outName, sep="\t", header=False)
 
 # get the observed data from files (only changes in the neutral model, which are at most one nucleotide away)
 
@@ -476,4 +478,5 @@ for s1, s2 in zip(firstType, secondType):
 
 outFileDf["Type"] = Type
 outFileDf.pop(0)
-outFileDf.fillna(0).to_csv('results.tsv', sep = "\t")
+outName = args.outFile + 'results.tsv'
+outFileDf.fillna(0).to_csv(outName, sep = "\t")
