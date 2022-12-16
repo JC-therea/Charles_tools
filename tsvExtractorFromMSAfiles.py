@@ -109,7 +109,7 @@ if args.mode == 0:
 
         outFilepd = pd.DataFrame(AlignmentsPais.items(), columns=['Alignment', 'Hits'])
         outFilePath = args.outFile + node + "_" + sps1 + "_" + sps2 + ".tsv"
-        print(f' For this analysis {OGs_used} orthogroups were used')
+        print(f' For  node {node} {OGs_used} orthogroups were used')
         outFilepd.to_csv(outFilePath, sep="\t", index=False)
 
 if args.mode == 1:
