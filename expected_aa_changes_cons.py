@@ -5,6 +5,7 @@ parser = argparse.ArgumentParser(description="This program calculates a neutral 
 								 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("-c", "--codons", default="0", type=str, help="path of the codon estimation file", required=True)
 parser.add_argument("-ns", "--nucleotideSubstitution", default="0", type=str, help="nucleotide substitutions matrix in the species (typically from introns)", required=True)
+parser.add_argument("-m", "--mode", default="noDir", type=str, help="Select the mode of the program, if the codons that you introduce are from triplets mode is 'Dir' if you are introducing only pairwise alignments the keep the default mode 'noDir'", required=True)
 parser.add_argument("-i", "--inputFiles", nargs='+', help="Add different tsv files with the codon change frequency", required=False)
 parser.add_argument("-o", "--outFile", default="", type=str, help="Name of the output file", required=False)
 
@@ -12,7 +13,8 @@ args = parser.parse_args()
 file_cod = args.codons
 #file_cod = "/home/jmontanes/Documents/IQtree_Gene_duplication/Insects/DropboxThings/gain_of_acidic_residues/gain_of_acidic_residues/neutral_changes/codons.txt"
 file_align_list = args.inputFiles
-
+mode = args.mode
+#mode = "Dir"
 #file_align1="/home/jmontanes/Documents/IQtree_Gene_duplication/Insects/DropboxThings/gain_of_acidic_residues/gain_of_acidic_residues/AlignmentChangesN1_Drosophila_sechelia.tsv"
 #file_align2="/home/jmontanes/Documents/IQtree_Gene_duplication/Insects/DropboxThings/gain_of_acidic_residues/gain_of_acidic_residues/AlignmentChangesN1_Drosophila_simulans.tsv"
 #file_align_list = [file_align1, file_align2]
@@ -74,6 +76,7 @@ subs={
 "tt" : 0}
 
 ######
+
 
 aa_list=('A','C','D','E','F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y')
 
@@ -416,67 +419,126 @@ for AA in aa_list:
 outName = args.outFile + 'neutral_model_probabilities.tsv'
 pd.DataFrame.from_dict(prob, orient="index").to_csv(outName, sep="\t", header=False)
 
-#########################################################################################################
-#### calculate expected probabilities (with no direction of change, AE=EA) and compare with observed ####
-#########################################################################################################
-probNoDir = prob.copy()
-sum_prob_neu=0
-for i in range(len(aa_list)):
-	for j in range(len(aa_list)):
-		aa_pair1=aa_list[i] + aa_list[j]
-		aa_pair2=aa_list[j] + aa_list[i]
-		#print(aa_pair1," ",aa_pair2)
-		if (aa_pair1 in probNoDir.keys() and aa_pair2 in probNoDir.keys()):
-			probNoDir[aa_pair1] = probNoDir[aa_pair1] + probNoDir[aa_pair2]# add probabilities
-			sum_prob_neu = sum_prob_neu + probNoDir[aa_pair1]
-			removed=probNoDir.pop(aa_pair2) # remove second pair from the hash
+if mode == "noDir":
+	#########################################################################################################
+	#### calculate expected probabilities (with no direction of change, AE=EA) and compare with observed ####
+	#########################################################################################################
+	probNoDir = prob.copy()
+	sum_prob_neu=0
+	for i in range(len(aa_list)):
+		for j in range(len(aa_list)):
+			aa_pair1=aa_list[i] + aa_list[j]
+			aa_pair2=aa_list[j] + aa_list[i]
+			#print(aa_pair1," ",aa_pair2)
+			if (aa_pair1 in probNoDir.keys() and aa_pair2 in probNoDir.keys()):
+				probNoDir[aa_pair1] = probNoDir[aa_pair1] + probNoDir[aa_pair2]# add probabilities
+				sum_prob_neu = sum_prob_neu + probNoDir[aa_pair1]
+				removed=probNoDir.pop(aa_pair2) # remove second pair from the hash
 
-# store the expected probabilities in a file (with no direction of change)
-outName = args.outFile + 'neutral_model_probabilities_nodirectionofchange.tsv'
-pd.DataFrame.from_dict(probNoDir, orient="index").to_csv(outName, sep="\t", header=False)
+	# store the expected probabilities in a file (with no direction of change)
+	outName = args.outFile + 'neutral_model_probabilities_nodirectionofchange.tsv'
+	pd.DataFrame.from_dict(probNoDir, orient="index").to_csv(outName, sep="\t", header=False)
 
-# get the observed data from files (only changes in the neutral model, which are at most one nucleotide away)
+	# get the observed data from files (only changes in the neutral model, which are at most one nucleotide away)
 
-probDf = pd.DataFrame.from_dict(probNoDir, orient="index")
-scaling_factor_obs_dict = {}
-pandasDfDict = {}
-pandasDfNames = []
+	probDf = pd.DataFrame.from_dict(probNoDir, orient="index")
+	scaling_factor_obs_dict = {}
+	pandasDfDict = {}
+	pandasDfNames = []
 
-for fileIn in file_align_list:
+	for fileIn in file_align_list:
 
-	#fileIn = file_align_list[0]
-	fileName = fileIn.split("/")[-1].split(".")[0]
-	pandasDfNames.append(fileName)
-	fileInDf = pd.read_csv(fileIn, sep="\t", index_col=0).drop("Perf")
-	fileInDf_prob = fileInDf[fileInDf.index.isin(probNoDir.keys())].copy()
-	fileInDf_prob.loc[fileInDf.index.isin(probDf.index[probDf[0] == 0]), "Hits"] = 0
-	pandasDfDict[fileName] = fileInDf_prob
-	# calculate scaling factors (we make the total number of changes equal in expected and observed)
-	scaling_factor_obs = fileInDf_prob.Hits.sum() / sum_prob_neu
-	scaling_factor_obs_dict[fileName] = scaling_factor_obs
+		#fileIn = file_align_list[0]
+		fileName = fileIn.split("/")[-1].split(".")[0]
+		pandasDfNames.append(fileName)
+		fileInDf = pd.read_csv(fileIn, sep="\t", index_col=0).drop("Perf")
+		fileInDf_prob = fileInDf[fileInDf.index.isin(probNoDir.keys())].copy()
+		fileInDf_prob.loc[fileInDf.index.isin(probDf.index[probDf[0] == 0]), "Hits"] = 0
+		pandasDfDict[fileName] = fileInDf_prob
+		# calculate scaling factors (we make the total number of changes equal in expected and observed)
+		scaling_factor_obs = fileInDf_prob.Hits.sum() / sum_prob_neu
+		scaling_factor_obs_dict[fileName] = scaling_factor_obs
 
-#fres=open(args.outFile,"w+")
-outFileDf = probDf.copy()#.pop(0)
-for fileName in pandasDfNames:
+	#fres=open(args.outFile,"w+")
+	outFileDf = probDf.copy()#.pop(0)
+	for fileName in pandasDfNames:
 
-	outFileDf["expected_" + fileName] = outFileDf[0] * scaling_factor_obs_dict[fileName]
-	outFileDf["observed_" + fileName] = pandasDfDict[fileName].Hits
+		outFileDf["expected_" + fileName] = outFileDf[0] * scaling_factor_obs_dict[fileName]
+		outFileDf["observed_" + fileName] = pandasDfDict[fileName].Hits
 
-firstLetter = outFileDf.index.get_level_values(outFileDf.index.name).str[0].tolist()
-firstType = [aa_type[x] for x in firstLetter]
+	firstLetter = outFileDf.index.get_level_values(outFileDf.index.name).str[0].tolist()
+	firstType = [aa_type[x] for x in firstLetter]
 
-secondLetter = outFileDf.index.get_level_values(outFileDf.index.name).str[1].tolist()
-secondType = [aa_type[x] for x in secondLetter]
+	secondLetter = outFileDf.index.get_level_values(outFileDf.index.name).str[1].tolist()
+	secondType = [aa_type[x] for x in secondLetter]
 
-Type = []
+	Type = []
 
-for s1, s2 in zip(firstType, secondType):
-	if s1[0] < s2[0]:
-		Type.append(s1 + "-" + s2)
-	else:
-		Type.append(s2 + "-" + s1)
+	for s1, s2 in zip(firstType, secondType):
+		if s1[0] < s2[0]:
+			Type.append(s1 + "-" + s2)
+		else:
+			Type.append(s2 + "-" + s1)
 
-outFileDf["Type"] = Type
-outFileDf.pop(0)
-outName = args.outFile + 'results.tsv'
-outFileDf.fillna(0).to_csv(outName, sep = "\t")
+	outFileDf["Type"] = Type
+	outFileDf.pop(0)
+	outName = args.outFile + 'results.tsv'
+	outFileDf.fillna(0).to_csv(outName, sep = "\t")
+
+elif mode == "Dir":
+	#########################################################################################################
+	#### calculate expected probabilities (with direction of change, AE!=EA) and compare with observed ####
+	#########################################################################################################
+
+	# Load neutral model
+	# Here as prob
+
+	probDf = pd.DataFrame.from_dict(prob, orient="index")
+	sum_prob_exp = probDf.sum().sum()
+
+	# From triplets of codons we have to create the file N1_changes_with_direction
+	#file_align_list = ["/home/jmontanes/Documents/IQtree_Gene_duplication/Insects/DropboxThings/gain_of_acidic_residues/gain_of_acidic_residues/AlignmentChangesN1_rootSpecies.tsv"]
+	fileInDf = pd.read_csv(file_align_list[0], sep="\t", index_col=0).drop("Perf")
+	prob_N1 = {}
+	for index, row in fileInDf.iterrows():
+		if index[0] == index[1] or index[0] == index[2]:
+			alDir = ''.join(dict.fromkeys(index))
+			try:
+				prob_N1[alDir] = prob_N1[alDir] + row["Hits"]
+			except:
+				prob_N1[alDir] = row["Hits"]
+
+	prob_N1Df = pd.DataFrame.from_dict(prob_N1, orient="index")
+	# Remove those that we have 0 probabilities to find it
+
+	prob_N1Df[prob_N1Df.index.isin(probDf[probDf[0] == 0].index)] = 0
+
+	sum_prob_N1 = prob_N1Df.sum().sum()
+
+	scaling_factor = sum_prob_N1 / sum_prob_exp
+	outFileDf = probDf.copy()
+	fileName = file_align_list[0].split("/")[-1].split(".")[0]
+	outFileDf["expected_" + fileName] = outFileDf[0] * scaling_factor
+	outFileDf["observed_" + fileName] = prob_N1Df[0]
+
+	firstLetter = outFileDf.index.get_level_values(outFileDf.index.name).str[0].tolist()
+	firstType = [aa_type[x] for x in firstLetter]
+
+	secondLetter = outFileDf.index.get_level_values(outFileDf.index.name).str[1].tolist()
+	secondType = [aa_type[x] for x in secondLetter]
+
+	Type = []
+
+	for s1, s2 in zip(firstType, secondType):
+		if s1[0] < s2[0]:
+			Type.append(s1 + "-" + s2)
+		else:
+			Type.append(s2 + "-" + s1)
+
+	outFileDf["Type"] = Type
+	outFileDf.pop(0)
+	outName = args.outFile + 'results.tsv'
+	outFileDf.fillna(0).to_csv(outName, sep = "\t")
+else:
+	print("Incorrect mode selected, quiting...")
+	quit()
