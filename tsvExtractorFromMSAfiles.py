@@ -1,6 +1,7 @@
 from Bio import AlignIO
 import argparse
 import pandas as pd
+import itertools
 
 parser = argparse.ArgumentParser(description="This programs needs the config file to work with the desired species",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -184,7 +185,7 @@ if args.mode == 2:
     for node in Nodes:
         OGN1 = summaryTable[summaryTable.AgeNode == node].OrthoGroup
         #MSAdir = "Standard_annotation/Proteomes/OrthoFinder/Results_MSA_IQtree_bigmem/MultipleSequenceAlignments/"
-
+        AlignmentPerNode = []
         AlignmentsPais = {}
         AlignmentPerOG = []
         for OG in OGN1:
@@ -248,8 +249,11 @@ if args.mode == 2:
                     AlignmentsPais[AlgnComb] = 1
 
             AlignmentPerNode.append(SpsOrder)
+
         outFilepd = pd.DataFrame(AlignmentsPais.items(), columns=['Alignment', 'Hits'])
         outFilePath = args.outFile + node + "_" + RefSp + "_" + sps1 + "_" + sps2 + "_withRoot.tsv"
         print(f' For  node {node} {OGs_used} orthogroups were used')
-        print(f'The order in the alignments is {set(AlignmentPerNode)}')
+        # Remove duplicate entries
+        AlignmentPerNode_reduced = [AlignmentPerNode for AlignmentPerNode, _ in itertools.groupby(AlignmentPerNode)]
+        print(f'The order in the alignments is {AlignmentPerNode_reduced}')
         outFilepd.to_csv(outFilePath, sep="\t", index=False)
