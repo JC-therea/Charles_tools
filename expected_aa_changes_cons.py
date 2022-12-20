@@ -530,10 +530,7 @@ elif mode == "Dir":
 	Type = []
 
 	for s1, s2 in zip(firstType, secondType):
-		if s1[0] < s2[0]:
 			Type.append(s1 + "-" + s2)
-		else:
-			Type.append(s2 + "-" + s1)
 
 	outFileDf["Type"] = Type
 	outFileDf.pop(0)
