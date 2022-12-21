@@ -453,7 +453,7 @@ if mode == "noDir":
 		pandasDfNames.append(fileName)
 		fileInDf = pd.read_csv(fileIn, sep="\t", index_col=0).drop("Perf")
 		fileInDf_prob = fileInDf[fileInDf.index.isin(probNoDir.keys())].copy()
-		fileInDf_prob.loc[fileInDf.index.isin(probDf.index[probDf[0] == 0]), "Hits"] = 0
+		fileInDf_prob.loc[fileInDf_prob.index.isin(probDf.index[probDf[0] == 0]), "Hits"] = 0
 		pandasDfDict[fileName] = fileInDf_prob
 		# calculate scaling factors (we make the total number of changes equal in expected and observed)
 		scaling_factor_obs = fileInDf_prob.Hits.sum() / sum_prob_neu
