@@ -66,7 +66,7 @@ for transcript in sequences:
 dfpd = pd.DataFrame(index = codonDict.keys(), columns = transcriptID_list)
 
 for transcript in sequences:
-    codonDictTranscript = trinucleotideParser(str(sequences[transcript].seq))
+    codonDictTranscript = trinucleotideParser(str(sequences[transcript].seq).upper())
     dfpd[transcript] = dfpd.index.map(codonDictTranscript)
 
 dfpd_noStops = dfpd.drop(["TAG","TGA","TAA"])
