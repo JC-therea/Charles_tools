@@ -92,15 +92,15 @@ for fasta in fasta_sequences:
 
 
 dfPolarDef = dfPolar.set_index(pd.Series(fastaNames))
-dfPolarDef.to_csv(path_or_buf= outPath + "Polar.csv", sep = "\t")
+dfPolarDef.to_csv(path_or_buf= outPath + "Polar.tsv", sep = "\t")
 
 dfAcidicDef = dfAcidic.set_index(pd.Series(fastaNames))
-dfAcidicDef.to_csv(path_or_buf= outPath + "Acidic.csv", sep = "\t")
+dfAcidicDef.to_csv(path_or_buf= outPath + "Acidic.tsv", sep = "\t")
 
 dfBasicDef = dfBasic.set_index(pd.Series(fastaNames))
-dfBasicDef.to_csv(path_or_buf= outPath + "Basic.csv", sep = "\t")
+dfBasicDef.to_csv(path_or_buf= outPath + "Basic.tsv", sep = "\t")
 
 dfNonPolarDef = dfNonPolar.set_index(pd.Series(fastaNames))
-dfNonPolarDef.to_csv(path_or_buf= outPath + "nonPolar.csv", sep = "\t")
+dfNonPolarDef.to_csv(path_or_buf= outPath + "nonPolar.tsv", sep = "\t")
 
 
