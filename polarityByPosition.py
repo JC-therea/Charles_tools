@@ -6,13 +6,18 @@ import argparse
 parser = argparse.ArgumentParser(description="This program calculates the polarity distribution of the amino acids",
 								 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("-i", "--input", default="", type=str, help="path of the input fasta file", required=True)
+parser.add_argument("-w", "--windows", default=10, type=int, help="Set the number of windows that you analyze, if you have smaller peptides than the windows probably there is going to be NaNs", required=True)
 parser.add_argument("-o", "--output", default="", type=str, help="Name of the output file", required=False)
-
 args = parser.parse_args()
 inputPath = args.input
+outPath = args.output
+NPoints = args.windows
+
+# inputPath = "/home/jmontanes/Documents/IQtree_Gene_duplication/Insects/Standard_annotation/OutputsR/AA_content/AA_alignments/PolarityDist/Dmel_N0.fa"
+# outPath = ""
+
 fasta_sequences = SeqIO.parse(open(inputPath),'fasta')
 records = len([1 for line in open(inputPath) if line.startswith(">")])
-outPath = args.output
 aa_type={
 "A" : "nonPolar", "C" : "Polar",  "D" : "Acidic", "E" : "Acidic", "F" : "nonPolar", "G" : "nonPolar", "H" : "Basic", "I" : "nonPolar", "K" : "Basic", "L" : "nonPolar",
 "M" : "nonPolar", "N" : "Polar", "P" : "nonPolar", "Q" : "Polar", "R" : "Basic", "S" : "Polar", "T" : "Polar", "V" : "nonPolar", "W" : "nonPolar", "Y" : "Polar"
@@ -23,26 +28,32 @@ nonPolarList = ["A","F","G","I","L","M","P","V","W"]
 AcidicList = ["D","E"]
 BasicList = ["H","K","R"]
 
-dfPolar = pd.DataFrame(index=range(records),columns=range(100))
-dfNonPolar = pd.DataFrame(index=range(records),columns=range(100))
-dfAcidic = pd.DataFrame(index=range(records),columns=range(100))
-dfBasic = pd.DataFrame(index=range(records),columns=range(100))
+
+dfPolar = pd.DataFrame(index=range(records),columns=range(NPoints))
+dfNonPolar = pd.DataFrame(index=range(records),columns=range(NPoints))
+dfAcidic = pd.DataFrame(index=range(records),columns=range(NPoints))
+dfBasic = pd.DataFrame(index=range(records),columns=range(NPoints))
 
 SeqNumber = 0
 fastaNames = []
 for fasta in fasta_sequences:
     name, sequence = fasta.id, str(fasta.seq)
-    print(name)
+    #print(name)
     if "." in sequence:
         print("Not allowed symbols")
         break
     fastaNames.append(name)
     RelStart = 0
-    for relPos in range(100):
-        print(relPos)
+    WholeRowPolar = {}
+    WholeRowNonPolar = {}
+    WholeRowAcidic = {}
+    WholeRowBasic = {}
+
+    for relPos in range(NPoints):
+        #print(relPos)
         AbsPosStart = RelStart
-        if relPos != 99:
-            AbsPosEnd = math.floor((relPos + 1) / 100 * len(sequence))
+        if relPos != (NPoints - 1):
+            AbsPosEnd = math.floor((relPos + 1) / NPoints * len(sequence))
         else:
             AbsPosEnd = len(sequence) - 1
 
@@ -65,25 +76,31 @@ for fasta in fasta_sequences:
         totAAs = Polar + NonPolar + Acidic + Basic
         if totAAs == 0:
             continue
-        dfPolar.loc[SeqNumber,RelStart] = Polar/totAAs
-        dfAcidic.loc[SeqNumber, RelStart] = Acidic / totAAs
-        dfBasic.loc[SeqNumber, RelStart] = Basic / totAAs
-        dfNonPolar.loc[SeqNumber, RelStart] = NonPolar / totAAs
+
+        WholeRowPolar[relPos] = Polar/totAAs
+        WholeRowNonPolar[relPos] = NonPolar / totAAs
+        WholeRowAcidic[relPos] = Acidic / totAAs
+        WholeRowBasic[relPos] = Basic / totAAs
 
         RelStart = AbsPosEnd
 
+    dfPolar.loc[SeqNumber] = pd.Series(WholeRowPolar)
+    dfAcidic.loc[SeqNumber] = pd.Series(WholeRowAcidic)
+    dfBasic.loc[SeqNumber] = pd.Series(WholeRowBasic)
+    dfNonPolar.loc[SeqNumber] = pd.Series(WholeRowNonPolar)
     SeqNumber += 1
 
-dfPolar.set_index(fastaNames)
-dfPolar.to_csv(path_or_buf= outPath + "Polar.csv", sep = "\t")
 
-dfAcidic.set_index(fastaNames)
-dfAcidic.to_csv(path_or_buf= outPath + "Acidic.csv", sep = "\t")
+dfPolarDef = dfPolar.set_index(pd.Series(fastaNames))
+dfPolarDef.to_csv(path_or_buf= outPath + "Polar.csv", sep = "\t")
 
-dfBasic.set_index(fastaNames)
-dfBasic.to_csv(path_or_buf= outPath + "Basic.csv", sep = "\t")
+dfAcidicDef = dfAcidic.set_index(pd.Series(fastaNames))
+dfAcidicDef.to_csv(path_or_buf= outPath + "Acidic.csv", sep = "\t")
 
-dfNonPolar.set_index(fastaNames)
-dfNonPolar.to_csv(path_or_buf= outPath + "nonPolar.csv", sep = "\t")
+dfBasicDef = dfBasic.set_index(pd.Series(fastaNames))
+dfBasicDef.to_csv(path_or_buf= outPath + "Basic.csv", sep = "\t")
+
+dfNonPolarDef = dfNonPolar.set_index(pd.Series(fastaNames))
+dfNonPolarDef.to_csv(path_or_buf= outPath + "nonPolar.csv", sep = "\t")
 
 
