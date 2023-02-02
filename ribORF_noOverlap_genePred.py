@@ -1,10 +1,16 @@
 import sys
 
 try:
-    functionName, filePath, outFilePath = sys.argv
+    functionName, filePath,featureChosen, outFilePath = sys.argv
 except:
-    print("error: moduleOfFixRibORFGenePred.py <Input file> <Output file>")
+    print("error: moduleOfFixRibORFGenePred.py <Input file> <Chosen features separated by , or All> <Output file>")
     quit()
+    
+featureChosenList = featureChosen.split(",")
+for feature in featureChosenList:
+    if feature not in ["All","canonical","extension","odORF","iORF","noncoding","ouORF","dORF","readthrough","truncation","uORF"]:
+        print("error: Not correct feature type " + feature)
+        quit()
 
 file = open(filePath,"r")
 outFile = open(outFilePath,"w+")
@@ -19,8 +25,8 @@ for line in file:
     geneID, ribORFchr, strand_nORF_transcriptLength, ribORFstart, ribORFend_ORFType_StartCodon = ribORF.split(":")
     ribORFstrand, nORF, transcriptLength = strand_nORF_transcriptLength.split("|")
     ribORFend, ORFType, StartCodon = ribORFend_ORFType_StartCodon.split("|")
-    #if ORFType not in allowed_ORFtypes:
-    #    continue
+    if ORFType not in featureChosenList or "All" not in featureChosenList:
+        continue
     if geneID not in keepedORFs.keys():
         keepedORFs[geneID] = {ribORFend: [ribORFstart,nORF] }
     if geneID in keepedORFs.keys():

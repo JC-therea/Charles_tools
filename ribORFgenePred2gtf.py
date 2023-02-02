@@ -9,7 +9,7 @@ except:
 
 featureChosenList = featureChosen.split(",")
 for feature in featureChosenList:
-    if feature not in ["All","canonical","extension","external","internal","noncoding","overlap.uORF","polycistronic","readthrough","truncation","uORF"]:
+    if feature not in ["All","canonical","extension","odORF","iORF","noncoding","ouORF","dORF","readthrough","truncation","uORF"]:
         print("error: Not correct feature type " + feature)
         quit()
 
