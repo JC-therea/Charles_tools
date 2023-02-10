@@ -6,6 +6,7 @@ import pandas as pd
 import warnings
 warnings.filterwarnings("ignore")
 
+# It has to be fixed por gff files
 
 try:
     functionName, file, output = sys.argv
