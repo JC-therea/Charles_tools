@@ -27,9 +27,9 @@ done
 echo $GENE
 echo $OUTPUT
 
-CHR=$(awk '$3 == "transcript"' $GTF | grep $GENE | cut -f1)
-START=$(( $(awk '$3 == "transcript"' $GTF | grep $GENE | cut -f 4)  ))
-END=$(( $(awk '$3 == "transcript"' $GTF | grep $GENE | cut -f 5)  ))
+CHR=$(awk '$3 == "gene"' $GTF | grep ${GENE}'"' | cut -f1)
+START=$(( $(awk '$3 == "gene"' $GTF | grep ${GENE}'"' | cut -f 4)  ))
+END=$(( $(awk '$3 == "gene"' $GTF | grep ${GENE}'"' | cut -f 5)  ))
 
 echo "Chromosomic region $CHR:$START-$END"
 
