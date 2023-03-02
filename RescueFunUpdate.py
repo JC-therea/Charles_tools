@@ -91,7 +91,9 @@ with open(refPAth, "r") as file:
         chr, source, feature, start, end, score, strand, frame, attr = line.split("\t")
 
         if feature == "mRNA":
-            refGene = attr.split("Parent=")[1].split(";")[0]
+            refGene = attr.split("Parent=")[1]
+            if ";" in refGene:
+                refGene = refGene.split(";")[0]
             refTranscript = attr.split("ID=")[1].split(";")[0]
 
             if refTranscript not in Transcript2geneRef.keys():
@@ -107,7 +109,9 @@ with open(refPAth, "r") as file:
         # Store exons because we only want to modify the ends of the transcript
         # and if they are multiexonic we only want to modify one exon
         if feature in ["exon"]:
-            refTranscript = attr.split("Parent=")[1].split(";")[0]
+            refTranscript = attr.split("Parent=")[1]
+            if ";" in refTranscript:
+                refTranscript = refTranscript.split(";")[0]
             if refTranscript in Transcript2geneRef.keys():
                 refGene = Transcript2geneRef[refTranscript]
                 if refGene not in oldFunGenes:
@@ -119,7 +123,9 @@ with open(refPAth, "r") as file:
 
         # Check and store only those genes with CDS and are not in our funannotate gff
         elif feature in ["CDS"]:
-            refTranscript = attr.split("Parent=")[1].split(";")[0]
+            refTranscript = attr.split("Parent=")[1]
+            if ";" in refTranscript:
+                refTranscript = refTranscript.split(";")[0]
             if refTranscript not in transcripts_with_CDS:
                 transcripts_with_CDS.append(refTranscript)
                 if refTranscript in Transcript2geneRef.keys():
@@ -135,7 +141,9 @@ with open(refPAth, "r") as file:
         # Rescue the gene and modify if they have UTRs
 
         if feature == "gene":
-            refGene = attr.split("ID=")[1].split(";")[0]
+            refGene = attr.split("ID=")[1]
+            if ";" in refGene:
+                refGene = refGene.split(";")[0]
             if refGene not in oldFunGenes and refGene in genes_with_CDS:
                 if strand == "+":
                     if refGene in utr5Dict.keys():
@@ -154,7 +162,9 @@ with open(refPAth, "r") as file:
         # Rescue mRNAs and modify them if they have UTRs
 
         elif feature == "mRNA":
-            refGene = attr.split("Parent=")[1].split(";")[0]
+            refGene = attr.split("Parent=")[1]
+            if ";" in refGene:
+                refGene = refGene.split(";")[0]
             refTranscript = attr.split("ID=")[1].split(";")[0]
             if refGene not in oldFunGenes and refTranscript in transcripts_with_CDS:
                 if strand == "+":
@@ -174,7 +184,9 @@ with open(refPAth, "r") as file:
         # Rescue the exons and modify them if they have UTRs
 
         elif feature == "exon":
-            refTranscript = attr.split("Parent=")[1].split(";")[0]
+            refTranscript = attr.split("Parent=")[1]
+            if ";" in refTranscript:
+                refTranscript = refTranscript.split(";")[0]
             if refGene not in oldFunGenes and refTranscript in transcripts_with_CDS and refTranscript in Transcript2geneRef.keys():
                 refGene = Transcript2geneRef[refTranscript]
                 if len(exonStorage[refGene]) == 2:
@@ -214,7 +226,9 @@ with open(refPAth, "r") as file:
         # Get the CDS and keep it as it is
 
         elif feature in ["CDS"]:
-            refTranscript = attr.split("Parent=")[1].split(";")[0]
+            refTranscript = attr.split("Parent=")[1]
+            if ";" in refTranscript:
+                refTranscript = refTranscript.split(";")[0]
             if refGene not in oldFunGenes and refTranscript in Transcript2geneRef.keys():
                 refGene = Transcript2geneRef[refTranscript]
                 new_attr = "ID=" + refGene + "-T1.cds;Parent=" + refGene + "-T1;" + "\n"
