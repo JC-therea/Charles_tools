@@ -196,7 +196,10 @@ with open(refPAth, "r") as file:
                 refTranscript = refTranscript.split(";")[0]
             else:
                 refTranscript = refTranscript.split("\n")[0]
-            refGene = Transcript2geneRef[refTranscript]
+            if refTranscript in refTranscript.keys():
+                refGene = Transcript2geneRef[refTranscript]
+            else:
+                continue
             if (refGene not in oldFunGenes) and (refTranscript in transcripts_with_CDS) and (refTranscript in Transcript2geneRef.keys()):
                 # refGene = Transcript2geneRef[refTranscript]
                 if len(exonStorage[refGene]) == 2:
