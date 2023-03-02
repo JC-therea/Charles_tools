@@ -196,7 +196,7 @@ with open(refPAth, "r") as file:
                 refTranscript = refTranscript.split(";")[0]
             else:
                 refTranscript = refTranscript.split("\n")[0]
-            if refTranscript in refTranscript.keys():
+            if refTranscript in Transcript2geneRef.keys():
                 refGene = Transcript2geneRef[refTranscript]
             else:
                 continue
