@@ -172,6 +172,8 @@ with open(refPAth, "r") as file:
             refGene = attr.split("Parent=")[1]
             if ";" in refGene:
                 refGene = refGene.split(";")[0]
+            else:
+                refGene = refGene.split("\n")[0]
             refTranscript = attr.split("ID=")[1].split(";")[0]
             if refGene not in oldFunGenes and refTranscript in transcripts_with_CDS:
                 if strand == "+":
