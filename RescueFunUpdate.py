@@ -196,9 +196,8 @@ with open(refPAth, "r") as file:
                 refTranscript = refTranscript.split(";")[0]
             else:
                 refTranscript = refTranscript.split("\n")[0]
-            if refGene not in oldFunGenes and refTranscript in transcripts_with_CDS and refTranscript in Transcript2geneRef.keys():
+            if (refGene not in oldFunGenes) and (refTranscript in transcripts_with_CDS) and (refTranscript in Transcript2geneRef.keys()):
                 refGene = Transcript2geneRef[refTranscript]
-                print(exonStorage)
                 if len(exonStorage[refGene]) == 2:
                     if strand == "+":
                         if refGene in utr5Dict.keys():
