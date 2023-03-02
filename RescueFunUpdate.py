@@ -161,10 +161,10 @@ with open(refPAth, "r") as file:
                             end = utr3Dict[refGene][1]
                 else:
                     if refGene in utr3Dict.keys():
-                        if start > utr3Dict[refGene][0]:
+                        if int(start) > utr3Dict[refGene][0]:
                             start = utr3Dict[refGene][0]
                     if refGene in utr5Dict.keys():
-                        if end < utr5Dict[refGene][1]:
+                        if int(end) < utr5Dict[refGene][1]:
                             end = utr5Dict[refGene][1]
                 new_attr = "ID=" + refGene + ";" + "\n"
                 new_line = "\t".join(map(str,[chr, source, feature, start, end, score, strand, frame, new_attr]))
@@ -181,20 +181,19 @@ with open(refPAth, "r") as file:
             refTranscript = attr.split("ID=")[1].split(";")[0]
             if refGene not in oldFunGenes and refTranscript in transcripts_with_CDS:
                 if strand == "+":
-                    if strand == "+":
-                        if refGene in utr5Dict.keys():
-                            if int(start) > utr5Dict[refGene][0]:
-                                start = utr5Dict[refGene][0]
-                        if refGene in utr3Dict.keys():
-                            if int(end) < utr3Dict[refGene][1]:
-                                end = utr3Dict[refGene][1]
-                    else:
-                        if refGene in utr3Dict.keys():
-                            if start > utr3Dict[refGene][0]:
-                                start = utr3Dict[refGene][0]
-                        if refGene in utr5Dict.keys():
-                            if end < utr5Dict[refGene][1]:
-                                end = utr5Dict[refGene][1]
+                    if refGene in utr5Dict.keys():
+                        if int(start) > utr5Dict[refGene][0]:
+                            start = utr5Dict[refGene][0]
+                    if refGene in utr3Dict.keys():
+                        if int(end) < utr3Dict[refGene][1]:
+                            end = utr3Dict[refGene][1]
+                else:
+                    if refGene in utr3Dict.keys():
+                        if int(start) > utr3Dict[refGene][0]:
+                            start = utr3Dict[refGene][0]
+                    if refGene in utr5Dict.keys():
+                        if int(end) < utr5Dict[refGene][1]:
+                            end = utr5Dict[refGene][1]
                 new_attr = "ID=" + refGene + "-T1;Parent=" + refGene + ";product=hypothetical protein;" + "\n"
                 new_line = "\t".join(map(str,[chr, source, feature, start, end, score, strand, frame, new_attr]))
                 gxfOutput.writelines(new_line)
@@ -223,10 +222,10 @@ with open(refPAth, "r") as file:
                                 end = utr3Dict[refGene][1]
                     else:
                         if refGene in utr3Dict.keys():
-                            if start > utr3Dict[refGene][0]:
+                            if int(start) > utr3Dict[refGene][0]:
                                 start = utr3Dict[refGene][0]
                         if refGene in utr5Dict.keys():
-                            if end < utr5Dict[refGene][1]:
+                            if int(end) < utr5Dict[refGene][1]:
                                 end = utr5Dict[refGene][1]
                 else:
                     if strand == "+":
@@ -241,11 +240,11 @@ with open(refPAth, "r") as file:
                     else:
                         if start == min(exonStorage[refGene]):
                             if refGene in utr3Dict.keys():
-                                if start > utr3Dict[refGene][0]:
+                                if int(start) > utr3Dict[refGene][0]:
                                     start = utr3Dict[refGene][0]
                         if end == max(exonStorage[refGene]):
                             if refGene in utr5Dict.keys():
-                                if end < utr5Dict[refGene][1]:
+                                if int(end) < utr5Dict[refGene][1]:
                                     end = utr5Dict[refGene][1]
                 if refGene not in exonCounting.keys():
                     exonCounting[refGene] = 1
