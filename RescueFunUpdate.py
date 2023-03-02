@@ -130,7 +130,7 @@ with open(refPAth, "r") as file:
                 transcripts_with_CDS.append(refTranscript)
                 if refTranscript in Transcript2geneRef.keys():
                     genes_with_CDS.append(Transcript2geneRef[refTranscript])
-
+print(transcripts_with_CDS)
 exonCounting = {}
 with open(refPAth, "r") as file:
     for line in file:
