@@ -94,6 +94,8 @@ with open(refPAth, "r") as file:
             refGene = attr.split("Parent=")[1]
             if ";" in refGene:
                 refGene = refGene.split(";")[0]
+            else:
+                refGene = refGene.split("\n")[0]
             refTranscript = attr.split("ID=")[1].split(";")[0]
 
             if refTranscript not in Transcript2geneRef.keys():
@@ -112,6 +114,8 @@ with open(refPAth, "r") as file:
             refTranscript = attr.split("Parent=")[1]
             if ";" in refTranscript:
                 refTranscript = refTranscript.split(";")[0]
+            else:
+                refTranscript = refTranscript.split("\n")[0]
             if refTranscript in Transcript2geneRef.keys():
                 refGene = Transcript2geneRef[refTranscript]
                 if refGene not in oldFunGenes:
@@ -126,11 +130,12 @@ with open(refPAth, "r") as file:
             refTranscript = attr.split("Parent=")[1]
             if ";" in refTranscript:
                 refTranscript = refTranscript.split(";")[0]
+            else:
+                refTranscript = refTranscript.split("\n")[0]
             if refTranscript not in transcripts_with_CDS:
                 transcripts_with_CDS.append(refTranscript)
                 if refTranscript in Transcript2geneRef.keys():
                     genes_with_CDS.append(Transcript2geneRef[refTranscript])
-print(transcripts_with_CDS)
 exonCounting = {}
 with open(refPAth, "r") as file:
     for line in file:
@@ -144,6 +149,8 @@ with open(refPAth, "r") as file:
             refGene = attr.split("ID=")[1]
             if ";" in refGene:
                 refGene = refGene.split(";")[0]
+            else:
+                refGene = refGene.split("\n")[0]
             if refGene not in oldFunGenes and refGene in genes_with_CDS:
                 if strand == "+":
                     if refGene in utr5Dict.keys():
@@ -187,6 +194,8 @@ with open(refPAth, "r") as file:
             refTranscript = attr.split("Parent=")[1]
             if ";" in refTranscript:
                 refTranscript = refTranscript.split(";")[0]
+            else:
+                refTranscript = refTranscript.split("\n")[0]
             if refGene not in oldFunGenes and refTranscript in transcripts_with_CDS and refTranscript in Transcript2geneRef.keys():
                 refGene = Transcript2geneRef[refTranscript]
                 if len(exonStorage[refGene]) == 2:
@@ -229,6 +238,8 @@ with open(refPAth, "r") as file:
             refTranscript = attr.split("Parent=")[1]
             if ";" in refTranscript:
                 refTranscript = refTranscript.split(";")[0]
+            else:
+                refTranscript = refTranscript.split("\n")[0]
             if refGene not in oldFunGenes and refTranscript in Transcript2geneRef.keys():
                 refGene = Transcript2geneRef[refTranscript]
                 new_attr = "ID=" + refGene + "-T1.cds;Parent=" + refGene + "-T1;" + "\n"
