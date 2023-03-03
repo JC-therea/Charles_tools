@@ -9,6 +9,8 @@ except:
 oldFunGenes = []
 oldFunTranscripts = []
 
+# First get the gene and transcript names of the filtered file
+
 gxfOutput = open(rescuedOutPath,"w+")
 
 with open(filteredFunPath, "r") as file:
@@ -38,6 +40,10 @@ utr3Dict = {}
 utr5Dict = {}
 
 Transcript2Gene = {}
+
+# From the original Funannotate file (without the filtering)
+# create a dictionary to recover the gene name from the transcript name
+
 with open(originalFunPath, "r") as file:
     for line in file:
         if "#" in line[0]:
@@ -49,6 +55,7 @@ with open(originalFunPath, "r") as file:
             Transcript2Gene[transcriptName] = geneName
 
 # Store UTRs of all the transcripts
+# From the original file
 with open(originalFunPath, "r") as file:
     for line in file:
         if "#" in line[0]:
@@ -59,26 +66,27 @@ with open(originalFunPath, "r") as file:
             gene = Transcript2Gene[transcript]
             # Keep the longest 5' UTR
             if gene in utr5Dict.keys():
-                if start < utr5Dict[gene][0]:
+                if int(start) < int(utr5Dict[gene][0]):
                     utr5Dict[gene][0] = start
-                if end > utr5Dict[gene][1]:
+                if int(end) > int(utr5Dict[gene][1]):
                     utr5Dict[gene][1] = end
             else:
-                utr5Dict[transcript] = [start, end]
+                utr5Dict[gene] = [start, end]
 
         elif feature == "three_prime_UTR":
             transcript = attr.split("Parent=")[1].split(";")[0]
             gene = Transcript2Gene[transcript]
             # Keep the longest 3' UTR
             if gene in utr3Dict.keys():
-                if start < utr3Dict[gene][0]:
+                if int(start) < int(utr3Dict[gene][0]):
                     utr3Dict[gene][0] = start
-                if end > utr3Dict[gene][1]:
+                if int(end) > int(utr3Dict[gene][1]):
                     utr3Dict[gene][1] = end
             else:
                 utr3Dict[gene] = [start, end]
 
-# Keep all the names of the reference sequence
+# Keep all the genes and transcript of the reference sequence
+
 exonStorage = {}
 transcripts_with_CDS = []
 genes_with_CDS = []
@@ -101,6 +109,9 @@ with open(refPAth, "r") as file:
             if refTranscript not in Transcript2geneRef.keys():
                 Transcript2geneRef[refTranscript] = refGene
 
+# Store exons because we only want to modify the ends of the transcript
+# and if they are multiexonic we only want to modify one exon
+# Also keep the transcripts and genes that have CDS because we want those
 
 with open(refPAth, "r") as file:
     for line in file:
@@ -108,8 +119,6 @@ with open(refPAth, "r") as file:
             continue
         chr, source, feature, start, end, score, strand, frame, attr = line.split("\t")
 
-        # Store exons because we only want to modify the ends of the transcript
-        # and if they are multiexonic we only want to modify one exon
         if feature in ["exon"]:
             refTranscript = attr.split("Parent=")[1]
             if ";" in refTranscript:
@@ -125,7 +134,6 @@ with open(refPAth, "r") as file:
                         exonStorage[refGene].append(start)
                         exonStorage[refGene].append(end)
 
-        # Check and store only those genes with CDS and are not in our funannotate gff
         elif feature in ["CDS"]:
             refTranscript = attr.split("Parent=")[1]
             if ";" in refTranscript:
@@ -136,14 +144,18 @@ with open(refPAth, "r") as file:
                 transcripts_with_CDS.append(refTranscript)
                 if refTranscript in Transcript2geneRef.keys():
                     genes_with_CDS.append(Transcript2geneRef[refTranscript])
+
 exonCounting = {}
+
+# Here is the main part where we rescue the transcripts
+
 with open(refPAth, "r") as file:
     for line in file:
         if "#" in line[0]:
             continue
         chr, source, feature, start, end, score, strand, frame, attr = line.split("\t")
 
-        # Rescue the gene and modify if they have UTRs
+        # Rescue the gene and modify it if they have UTRs
 
         if feature == "gene":
             refGene = attr.split("ID=")[1]
@@ -157,6 +169,7 @@ with open(refPAth, "r") as file:
                         if int(start) > int(utr5Dict[refGene][0]):
                             start = utr5Dict[refGene][0]
                     if refGene in utr3Dict.keys():
+
                         if int(end) < int(utr3Dict[refGene][1]):
                             end = utr3Dict[refGene][1]
                 else:
