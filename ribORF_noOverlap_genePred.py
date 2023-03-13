@@ -1,9 +1,9 @@
 import sys
 
 try:
-    functionName, filePath,featureChosen, outFilePath = sys.argv
+    functionName, filePath, featureChosen, ATGmode, outFilePath = sys.argv
 except:
-    print("error: moduleOfFixRibORFGenePred.py <Input file> <Chosen features separated by , or All> <Output file>")
+    print("error: ribORF_noOverlap_genePred.py <Input file> <Chosen features separated by , or All> <ATG mode = T/F> <Output file>")
     quit()
 
 featureChosenList = featureChosen.split(",")
@@ -11,7 +11,7 @@ for feature in featureChosenList:
     if feature not in ["All","canonical","extension","odORF","iORF","noncoding","ouORF","dORF","readthrough","truncation","uORF"]:
         print("error: Not correct feature type " + feature)
         quit()
-# filePath = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/EvolutionNanopore/ribosomeProfiling/Correct_format_files/Scer/candidateORF.genepred.txt"
+# filePath = "~/Documents/EvolutionNanopore/Outputs/EvolutionNanopore/ribosomeProfiling/Correct_format_files/Scer/candidateORF.genepred.txt"
 # outFilePath = "p.txt"
 # featureChosen = "canonical,uORF,dORF"
 # featureChosenList = featureChosen.split(",")
@@ -31,18 +31,31 @@ for line in file:
         continue
     # if the gene ID is not included in keepedORFs, add it
     if geneID not in keepedORFs.keys():
-        keepedORFs[geneID] = {ribORFend: [ribORFstart,nORF] }
+        keepedORFs[geneID] = {ribORFend: [ribORFstart, nORF, StartCodon] }
     if geneID in keepedORFs.keys():
         # If it's already there check if the same ribORF end is shared
         if ribORFend in keepedORFs[geneID].keys():
             # If it is check if the stating codon is earlier or not
             # if it is store the start and also the ORF number of the gene
-            if int(ribORFstart) < int(keepedORFs[geneID][ribORFend][0]):
-                keepedORFs[geneID][ribORFend][0] = ribORFstart
-                keepedORFs[geneID][ribORFend][1] = nORF
-        # If doesn't have the same ending point just add it
+            if ATGmode == "F":
+
+                if int(ribORFstart) < int(keepedORFs[geneID][ribORFend][0]):
+                    keepedORFs[geneID][ribORFend][0] = ribORFstart
+                    keepedORFs[geneID][ribORFend][1] = nORF
+                    keepedORFs[geneID][ribORFend][2] = StartCodon
+            elif ATGmode == "T":
+                if keepedORFs[geneID][ribORFend][2] == "ATG":
+                    if int(ribORFstart) < int(keepedORFs[geneID][ribORFend][0]) and StartCodon == "ATG":
+                        keepedORFs[geneID][ribORFend][0] = ribORFstart
+                        keepedORFs[geneID][ribORFend][1] = nORF
+                        keepedORFs[geneID][ribORFend][2] = StartCodon
+                else:
+                    if int(ribORFstart) < int(keepedORFs[geneID][ribORFend][0]) or StartCodon == "ATG":
+                        keepedORFs[geneID][ribORFend][0] = ribORFstart
+                        keepedORFs[geneID][ribORFend][1] = nORF
+                        keepedORFs[geneID][ribORFend][2] = StartCodon
         else:
-            keepedORFs[geneID].update({ribORFend: [ribORFstart,nORF] })
+            keepedORFs[geneID].update({ribORFend: [ribORFstart, nORF, StartCodon] })
 file.close()
 file = open(filePath,"r")
 for line in file:
