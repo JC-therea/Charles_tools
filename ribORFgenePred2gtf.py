@@ -1,19 +1,20 @@
 
 import sys
 
-# try:
-#     functionName, filePath, featureChosen, IGV_mode, outFilePath = sys.argv
-# except:
-#     print("error: ribORFgenePred2gtf.py <ribORF genePred file> <ribORF features splitted by comma or All> <IGV mode (True or False)> <Output file>")
-#     quit()
-#
-# featureChosenList = featureChosen.split(",")
+try:
+     functionName, filePath, featureChosen, IGV_mode, outFilePath = sys.argv
+except:
+     print("error: ribORFgenePred2gtf.py <ribORF genePred file> <ribORF features splitted by comma or All> <IGV mode (True or False)> <Output file>")
+     quit()
+
+
+featureChosenList = featureChosen.split(",")
 
 # Modificar esta parte para el cambio manual
-filePath = "candidateORF.genepred.txt"
-featureChosen = ["All"]
-IGV_mode = "True"
-outFilePath = "candidateORF.gtf"
+#filePath = "candidateORF.genepred.txt"
+#featureChosen = ["All"]
+#IGV_mode = "True"
+#outFilePath = "candidateORF.gtf"
 for feature in featureChosenList:
     if feature not in ["All","canonical","extension","odORF","iORF","noncoding","ouORF","dORF","readthrough","truncation","uORF"]:
         print("error: Not correct feature type " + feature)
