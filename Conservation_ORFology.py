@@ -163,7 +163,7 @@ for index, row in ORF_table.iterrows():
         if len(SparORF_filtered_df) >= 1:
             Spar_orthoORFs += 1
             ORF_in_Spar.append(orfID)
-            Spar_ORFs[orfID] = "-".join(SparORF_filtered_df["orfID"])
+            Spar_ORFs[orfID] = "{-}".join(SparORF_filtered_df["orfID"])
 
     if len(Sbay_gene) > 2 and sum(SbayORF_table.gene == Sbay_gene) > 0:
         SbayORF_table_subset = SbayORF_table[SbayORF_table.gene == Sbay_gene].copy()
@@ -184,7 +184,7 @@ for index, row in ORF_table.iterrows():
         if len(SbayORF_filtered_df) >= 1:
             Sbay_orthoORFs += 1
             ORF_in_Sbay.append(orfID)
-            Sbay_ORFs[orfID] = "-".join(SbayORF_filtered_df["orfID"])
+            Sbay_ORFs[orfID] = "{-}".join(SbayORF_filtered_df["orfID"])
 
 # Create a set of all unique strings from both lists
 unique_transcripts = set(ORF_in_Spar + ORF_in_Sbay)
