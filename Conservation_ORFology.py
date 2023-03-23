@@ -1,13 +1,37 @@
 import pandas as pd
 from Bio import SeqIO
+import argparse
 
-ScerORF_table_path = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/OutputsR/RibosomeProfilingStats/Scer_validuORFs.tsv"
-SparORF_table_path = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/OutputsR/RibosomeProfilingStats/Spar_ORFs.tsv"
-SbayORF_table_path = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/OutputsR/RibosomeProfilingStats/Sbay_ORFs.tsv"
+parser = argparse.ArgumentParser(description="This programs needs the config file to work with the desired species",
+                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument("-i", "--ORFlist", default="", type=str, help="path to the file that has all the valid ORFs from the reference species")
+parser.add_argument("-spar", "--ORFSpar", default="", type=str, help="path to the file that has all the ORFs from the alt species")
+parser.add_argument("-sbay", "--ORFSbay", default="", type=str, help="path to the file that has all the ORFs from the alt species")
+parser.add_argument("-orth", "--orthologs", default="", type=str, help="path to the tsv file that indicates the orthology of the genes")
+parser.add_argument("-msa", "--MSAdir", default="", type=str, help="path to the directory where are all the 5'UTR regions aligned")
+parser.add_argument("-o", "--outFile", default="", type=str, help="Name of the output file")
 
-Orthologues_table_path = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/OutputsR/Evolution/ORFevolution/Orthology_evolution_5utr.tsv"
-MSA_dir_path = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/EvolutionNanopore/Outputs/Transcripts/UTR5/UTR5_alignments/"
-ConserveduORFs_path = "Conserved_uORF.txt"
+args = parser.parse_args()
+
+ScerORF_table_path = args.ORFlist
+SparORF_table_path = args.ORFSpar
+SbayORF_table_path = args.ORFSbay
+
+Orthologues_table_path = args.orthologs
+MSA_dir_path = args.MSAdir
+
+if not MSA_dir_path.endswith("/"):
+    MSA_dir_path = MSA_dir_path + "/"
+
+ConserveduORFs_path = args.outFile
+
+# ScerORF_table_path = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/OutputsR/RibosomeProfilingStats/Scer_validuORFs.tsv"
+# SparORF_table_path = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/OutputsR/RibosomeProfilingStats/Spar_ORFs.tsv"
+# SbayORF_table_path = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/OutputsR/RibosomeProfilingStats/Sbay_ORFs.tsv"
+
+# Orthologues_table_path = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/OutputsR/Evolution/ORFevolution/Orthology_evolution_5utr.tsv"
+# MSA_dir_path = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/EvolutionNanopore/Outputs/Transcripts/UTR5/UTR5_alignments/"
+# ConserveduORFs_path = "Conserved_uORF.txt"
 
 ORF_table = pd.read_csv(ScerORF_table_path, sep = "\t")
 SparORF_table = pd.read_csv(SparORF_table_path, sep = "\t")
@@ -75,6 +99,10 @@ Sbay_orthoORFs = 0
 orthoORFs = 0
 
 ConserveduORFs = open(ConserveduORFs_path, "w+")
+ORF_in_Spar = []
+Spar_ORFs = {}
+ORF_in_Sbay = []
+Sbay_ORFs = {}
 
 for index, row in ORF_table.iterrows():
 
@@ -130,29 +158,12 @@ for index, row in ORF_table.iterrows():
                     (SparORF_table_subset['transcriptInit'] < Spar[1]) & (SparORF_table_subset['transcriptEnd'] > Spar[1]))
 
         # Filter the transcripts that are either completely within the window or partially within the window with at least 50% of their length inside the window
-        SparORF_filtered_df = SparORF_table_subset[((SparORF_table_subset['within_window']) | (SparORF_table_subset['partially_within_window']))]
+        SparORF_filtered_df = SparORF_table_subset[((SparORF_table_subset['within_window']) | (SparORF_table_subset['partially_within_window']))].copy()
 
         if len(SparORF_filtered_df) >= 1:
             Spar_orthoORFs += 1
-
-        if len(Sbay_gene) > 2 and sum(SbayORF_table.gene == Sbay_gene) > 0:
-            SbayORF_table_subset = SbayORF_table[SbayORF_table.gene == Sbay_gene].copy()
-            SbayORF_table_subset['within_window'] = (SbayORF_table_subset['transcriptInit'] >= Sbay[0]) & (
-                        SparORF_table_subset['transcriptEnd'] <= Sbay[1])
-
-            # Create a new column to store whether each transcript is partially within the window
-            SbayORF_table_subset['partially_within_window'] = ((SbayORF_table_subset['transcriptInit'] < Sbay[0]) & (
-                        SbayORF_table_subset['transcriptEnd'] > Sbay[0])) | (
-                                                                      (SbayORF_table_subset['transcriptInit'] < Sbay[
-                                                                          1]) & (SbayORF_table_subset['transcriptEnd'] >
-                                                                                 Sbay[1]))
-
-            # Filter the transcripts that are either completely within the window or partially within the window with at least 50% of their length inside the window
-            SbayORF_filtered_df = SbayORF_table_subset[((SbayORF_table_subset['within_window']) | (SbayORF_table_subset['partially_within_window']))]
-
-            if len(SbayORF_filtered_df) >= 1:
-                orthoORFs += 1
-                ConserveduORFs.writelines(orfID + "\n")
+            ORF_in_Spar.append(orfID)
+            Spar_ORFs[orfID] = "-".join(SparORF_filtered_df["orfID"])
 
     if len(Sbay_gene) > 2 and sum(SbayORF_table.gene == Sbay_gene) > 0:
         SbayORF_table_subset = SbayORF_table[SbayORF_table.gene == Sbay_gene].copy()
@@ -168,12 +179,42 @@ for index, row in ORF_table.iterrows():
 
         # Filter the transcripts that are either completely within the window or partially within the window with at least 50% of their length inside the window
         SbayORF_filtered_df = SbayORF_table_subset[
-            ((SbayORF_table_subset['within_window']) | (SbayORF_table_subset['partially_within_window']))]
+            ((SbayORF_table_subset['within_window']) | (SbayORF_table_subset['partially_within_window']))].copy()
 
         if len(SbayORF_filtered_df) >= 1:
             Sbay_orthoORFs += 1
+            ORF_in_Sbay.append(orfID)
+            Sbay_ORFs[orfID] = "-".join(SbayORF_filtered_df["orfID"])
 
-ConserveduORFs.close()
+# Create a set of all unique strings from both lists
+unique_transcripts = set(ORF_in_Spar + ORF_in_Sbay)
+Spar_listTF = []
+Spar_listTranscripts = []
+
+Sbay_listTF = []
+Sbay_listTranscripts = []
+
+for transcript in unique_transcripts:
+    Spar_listTF.append(transcript in ORF_in_Spar)
+
+    if transcript in Spar_ORFs.keys():
+        Spar_listTranscripts.append(Spar_ORFs[transcript])
+    else:
+        Spar_listTranscripts.append("-")
+
+    Sbay_listTF.append(transcript in ORF_in_Sbay)
+
+    if transcript in Sbay_ORFs.keys():
+        Sbay_listTranscripts.append(Sbay_ORFs[transcript])
+    else:
+        Sbay_listTranscripts.append("-")
+
+df = pd.DataFrame(list(zip(unique_transcripts, Spar_listTF, Spar_listTranscripts, Sbay_listTF, Sbay_listTranscripts)), columns=['ORF', 'Spar', 'Spar_ORFs', 'Sbay', 'Sbay_ORFs'])
+
+# Output the DataFrame to TSV format
+df.to_csv(ConserveduORFs_path, sep='\t', index=False)
+
+#ConserveduORFs.close()
 # SparORF_filtered_df = SparORF_table_subset[((SparORF_table_subset['within_window']) | (SparORF_table_subset['partially_within_window'])) & (
 #             (SparORF_table_subset['length'] >= (Spar[1] - Spar[0]) * 0.5) | (
 #                 SparORF_table_subset['transcriptEnd'] - Spar[0] >= (Spar[1] - Spar[0]) * 0.5) | (
