@@ -11,6 +11,10 @@ parser.add_argument("-orth", "--orthologs", default="", type=str, help="path to 
 parser.add_argument("-msa", "--MSAdir", default="", type=str, help="path to the directory where are all the 5'UTR regions aligned")
 parser.add_argument("-o", "--outFile", default="", type=str, help="Name of the output file")
 
+#parser.add_argument("-orf", "--ORF_type", default="", type=str, help="Provide information about the type of ORF that is going to be studied")
+#parser.add_argument("-d", "--table_of_lengths", default="", type=str, help="Table that include the information about the length of each transcript and its parts")
+
+
 args = parser.parse_args()
 
 ScerORF_table_path = args.ORFlist
@@ -109,7 +113,7 @@ for index, row in ORF_table.iterrows():
     orfID = row["orfID"]
     gene = row["gene"]
 
-    spsAlign = Orthologues_table["speciesAligment"][Orthologues_table["Scer"] == gene].to_string(index = False)
+    #spsAlign = Orthologues_table["speciesAligment"][Orthologues_table["Scer"] == gene].to_string(index = False)
     OGID = Orthologues_table["OGID"][Orthologues_table["Scer"] == gene].to_string(index = False).zfill(7) + ".mfa"
     if OGID.startswith("Series([]"):
         continue
