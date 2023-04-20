@@ -208,7 +208,7 @@ for transcript in unique_transcripts:
     else:
         Sbay_listTranscripts.append("-")
 
-df = pd.DataFrame(list(zip(unique_transcripts, Spar_listTranscripts, Sbay_listTranscripts)), columns=['ORF', 'Spar', 'Spar_ORFs', 'Sbay', 'Sbay_ORFs'])
+df = pd.DataFrame(list(zip(unique_transcripts, Spar_listTranscripts, Sbay_listTranscripts)), columns=['ORF', 'Spar_ORFs', 'Sbay_ORFs'])
 
 # Output the DataFrame to TSV format
 df.to_csv(ConserveduORFs_path, sep='\t', index=False)
