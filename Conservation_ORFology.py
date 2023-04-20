@@ -8,12 +8,11 @@ parser.add_argument("-i", "--ORFlist", default="", type=str, help="path to the f
 parser.add_argument("-spar", "--ORFSpar", default="", type=str, help="path to the file that has all the ORFs from the alt species")
 parser.add_argument("-sbay", "--ORFSbay", default="", type=str, help="path to the file that has all the ORFs from the alt species")
 parser.add_argument("-orth", "--orthologs", default="", type=str, help="path to the tsv file that indicates the orthology of the genes")
-parser.add_argument("-msa", "--MSAdir", default="", type=str, help="path to the directory where are all the 5'UTR regions aligned")
+parser.add_argument("-msa", "--MSAdir", default="", type=str, help="path to the directory where are all the regions aligned")
 parser.add_argument("-o", "--outFile", default="", type=str, help="Name of the output file")
 
 #parser.add_argument("-orf", "--ORF_type", default="", type=str, help="Provide information about the type of ORF that is going to be studied")
 #parser.add_argument("-d", "--table_of_lengths", default="", type=str, help="Table that include the information about the length of each transcript and its parts")
-
 
 args = parser.parse_args()
 
@@ -192,42 +191,24 @@ for index, row in ORF_table.iterrows():
 
 # Create a set of all unique strings from both lists
 unique_transcripts = set(ORF_in_Spar + ORF_in_Sbay)
-Spar_listTF = []
 Spar_listTranscripts = []
 
-Sbay_listTF = []
 Sbay_listTranscripts = []
 
 for transcript in unique_transcripts:
-    Spar_listTF.append(transcript in ORF_in_Spar)
 
     if transcript in Spar_ORFs.keys():
         Spar_listTranscripts.append(Spar_ORFs[transcript])
     else:
         Spar_listTranscripts.append("-")
 
-    Sbay_listTF.append(transcript in ORF_in_Sbay)
 
     if transcript in Sbay_ORFs.keys():
         Sbay_listTranscripts.append(Sbay_ORFs[transcript])
     else:
         Sbay_listTranscripts.append("-")
 
-df = pd.DataFrame(list(zip(unique_transcripts, Spar_listTF, Spar_listTranscripts, Sbay_listTF, Sbay_listTranscripts)), columns=['ORF', 'Spar', 'Spar_ORFs', 'Sbay', 'Sbay_ORFs'])
+df = pd.DataFrame(list(zip(unique_transcripts, Spar_listTranscripts, Sbay_listTranscripts)), columns=['ORF', 'Spar', 'Spar_ORFs', 'Sbay', 'Sbay_ORFs'])
 
 # Output the DataFrame to TSV format
 df.to_csv(ConserveduORFs_path, sep='\t', index=False)
-
-#ConserveduORFs.close()
-# SparORF_filtered_df = SparORF_table_subset[((SparORF_table_subset['within_window']) | (SparORF_table_subset['partially_within_window'])) & (
-#             (SparORF_table_subset['length'] >= (Spar[1] - Spar[0]) * 0.5) | (
-#                 SparORF_table_subset['transcriptEnd'] - Spar[0] >= (Spar[1] - Spar[0]) * 0.5) | (
-#                         Spar[1] - SparORF_table_subset['transcriptInit'] >= (Spar[1] - Spar[0]) * 0.5))]
-
-########
-
-# SbayORF_filtered_df = SbayORF_table_subset[
-#     ((SbayORF_table_subset['within_window']) | (SbayORF_table_subset['partially_within_window'])) & (
-#             (SbayORF_table_subset['length'] >= (Sbay[1] - Sbay[0]) * 0.5) | (
-#             SbayORF_table_subset['transcriptEnd'] - Sbay[0] >= (Sbay[1] - Sbay[0]) * 0.5) | (
-#                     Sbay[1] - SbayORF_table_subset['transcriptInit'] >= (Sbay[1] - Sbay[0]) * 0.5))]
