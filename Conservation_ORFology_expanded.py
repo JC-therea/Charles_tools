@@ -181,8 +181,8 @@ for index, row in ORF_table.iterrows():
         for i in range(0,len(SparORF_filtered_df)):
             ScerOrfIDList.append(orfID)
             OGID_list.append(OGID_clean)
-            ScerMSA_start_list.append(ScerMSAstart)
-            ScerMSA_end_list.append(ScerMSAend)
+            ScerMSA_start_list.append(ScerMSAstart + 1)
+            ScerMSA_end_list.append(ScerMSAend + 1)
             ScerStartORFinT_list.append(ScerribORFstart)
             ScerEndORFinT_list.append(ScerribORFend)
             OutSpecies.append("S.paradoxus")
@@ -201,8 +201,8 @@ for index, row in ORF_table.iterrows():
                 for transcript in sequences:
                     if transcript in Spar_genes:
                         MSAstart, MSAend = GetMSAORFpos(str(sequences[transcript].seq).upper(), int(ribORFstart), int(ribORFend))
-                OutSpeciesMSAStart_list.append(MSAstart)
-                OutSpeciesMSAEnd_list.append(MSAend)
+                OutSpeciesMSAStart_list.append(MSAstart + 1)
+                OutSpeciesMSAEnd_list.append(MSAend + 1)
                 OutSpeciesORFstart_list.append(ribORFstart)
                 OutSpeciesORFEnd_list.append(ribORFend)
     # Sbay
@@ -225,8 +225,8 @@ for index, row in ORF_table.iterrows():
         for i in range(0,len(SbayORF_filtered_df)):
             ScerOrfIDList.append(orfID)
             OGID_list.append(OGID_clean)
-            ScerMSA_start_list.append(ScerMSAstart)
-            ScerMSA_end_list.append(ScerMSAend)
+            ScerMSA_start_list.append(ScerMSAstart + 1)
+            ScerMSA_end_list.append(ScerMSAend + 1)
             ScerStartORFinT_list.append(ScerribORFstart)
             ScerEndORFinT_list.append(ScerribORFend)
             OutSpecies.append("S.bayanus")
@@ -247,8 +247,8 @@ for index, row in ORF_table.iterrows():
                 for transcript in sequences:
                     if transcript in Sbay_genes:
                         MSAstart, MSAend = GetMSAORFpos(str(sequences[transcript].seq).upper(), int(ribORFstart), int(ribORFend))
-                OutSpeciesMSAStart_list.append(MSAstart)
-                OutSpeciesMSAEnd_list.append(MSAend)
+                OutSpeciesMSAStart_list.append(MSAstart + 1)
+                OutSpeciesMSAEnd_list.append(MSAend + 1)
                 OutSpeciesORFstart_list.append(ribORFstart)
                 OutSpeciesORFEnd_list.append(ribORFend)
 
