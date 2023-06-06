@@ -22,7 +22,7 @@ def search_pattern(multifasta_file, output_file, pattern):
                 current_seq = line[1:]
                 sequences[current_seq] = ''
             else:
-                sequences[current_seq] += line
+                sequences[current_seq] += line.upper()
 
     pattern_count = {}  # Dictionary to store pattern counts for each sequence
 
