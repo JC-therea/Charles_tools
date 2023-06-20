@@ -71,8 +71,11 @@ Orthologues_table = pd.read_csv(Orthologues_table_path, sep = "\t")
 Spar_genes = Orthologues_table["Spar"].to_list()
 Sbay_genes = Orthologues_table["Sbay"].to_list()
 
-# Test
-### Fun to extract positions in MSA
+########################################################################################
+################################ Functions #############################################
+########################################################################################
+
+### To extract positions in MSA
 
 def GetMSAORFpos(nuclSeq,ORFStart,ORFEnd):
     MSApos = 0
@@ -124,6 +127,26 @@ def GetORFpos(nuclSeq,MSAstart,MSAend):
 
     return ORFStart_local, ORFEnd_local
 
+def returnOverlap(RefMSAst, RefMSAend, SpMSAst, SpMSAend):
+    if SpMSAst > RefMSAst:
+        if SpMSAend < RefMSAend:
+            # ORF inside the reference
+            return(["Inner", SpMSAend - SpMSAst])
+        else:
+            # Right end larger
+            return(["Right", RefMSAend - SpMSAst])
+    else:
+        if SpMSAend > RefMSAend:
+            # Overlaps the ORF of the reference species
+            return(["Outer", RefMSAend - RefMSAst])
+        else:
+            # Left and larger
+            return(["Left", SpMSAend - RefMSAst])
+
+########################################################################################
+########################################################################################
+########################################################################################
+
 Spar_orthoORFs = 0
 Sbay_orthoORFs = 0
 orthoORFs = 0
@@ -147,6 +170,9 @@ OutSpeciesMSAStart_list = []
 OutSpeciesMSAEnd_list = []
 OutSpeciesORFstart_list = []
 OutSpeciesORFEnd_list = []
+
+ORFOverlap = []
+ORFOverlapClass = []
 
 for index, row in ORF_table.iterrows():
 
@@ -234,6 +260,11 @@ for index, row in ORF_table.iterrows():
                 OutSpeciesMSAEnd_list.append(MSAend + 1)
                 OutSpeciesORFstart_list.append(ribORFstart)
                 OutSpeciesORFEnd_list.append(ribORFend)
+
+                ClassOv, NuclOv = returnOverlap(ScerMSAstart, ScerMSAend, MSAstart, MSAend)
+                ORFOverlap.append(NuclOv)
+                ORFOverlapClass.append(ClassOv)
+
     # Sbay
     if len(Sbay_gene) > 2 and sum(SbayORF_table.gene == Sbay_gene) > 0:
         SbayORF_table_subset = SbayORF_table[SbayORF_table.gene == Sbay_gene].copy()
@@ -281,11 +312,17 @@ for index, row in ORF_table.iterrows():
                 OutSpeciesORFstart_list.append(ribORFstart)
                 OutSpeciesORFEnd_list.append(ribORFend)
 
+                ClassOv, NuclOv = returnOverlap(ScerMSAstart, ScerMSAend, MSAstart, MSAend)
+                ORFOverlap.append(NuclOv)
+                ORFOverlapClass.append(ClassOv)
+
 # Create a set of all unique strings from both lists
 df = pd.DataFrame(list(zip(ScerOrfIDList, OGID_list, ScerMSA_start_list, ScerMSA_end_list, ScerStartORFinT_list, ScerEndORFinT_list,
-                           OutSpecies,OutSpeciesORFid, OutSpeciesMSAStart_list, OutSpeciesMSAEnd_list, OutSpeciesORFstart_list, OutSpeciesORFEnd_list
+                           OutSpecies,OutSpeciesORFid, OutSpeciesMSAStart_list, OutSpeciesMSAEnd_list, OutSpeciesORFstart_list, OutSpeciesORFEnd_list,
+                           ORFOverlap, ORFOverlapClass
                            )), columns=['RefORF', 'OGID', 'Ref_MSA_start', 'Ref_MSA_end', 'Ref_orf_start', 'Ref_orf_end',
-                                        'OutSpecies', 'OutSpeciesORF', 'OutS_MSA_start', 'OutS_MSA_end', 'OutS_orf_start', 'OutS_orf_end'])
+                                        'OutSpecies', 'OutSpeciesORF', 'OutS_MSA_start', 'OutS_MSA_end', 'OutS_orf_start', 'OutS_orf_end',
+                                        "NuclOverlap","ClassOverlap"])
 
 # Output the DataFrame to TSV format
 df.to_csv(ConserveduORFs_path, sep='\t', index=False)
