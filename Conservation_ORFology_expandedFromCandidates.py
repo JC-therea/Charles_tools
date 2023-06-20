@@ -128,10 +128,13 @@ def GetORFpos(nuclSeq,MSAstart,MSAend):
     return ORFStart_local, ORFEnd_local
 
 def returnOverlap(RefMSAst, RefMSAend, SpMSAst, SpMSAend):
-    if SpMSAst > RefMSAst:
-        if SpMSAend < RefMSAend:
+    if SpMSAst >= RefMSAst:
+        if SpMSAst > RefMSAst & SpMSAend <= RefMSAend:
             # ORF inside the reference
             return(["Inner", SpMSAend - SpMSAst])
+        elif SpMSAend == RefMSAend & SpMSAst == RefMSAst:
+            # ORF perfect match
+            return (["Perfect match", RefMSAend - RefMSAst])
         else:
             # Right end larger
             return(["Right", RefMSAend - SpMSAst])
