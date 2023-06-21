@@ -11,10 +11,10 @@ for feature in featureChosenList:
     if feature not in ["All","canonical","extension","odORF","iORF","noncoding","ouORF","dORF","readthrough","truncation","uORF"]:
         print("error: Not correct feature type " + feature)
         quit()
-filePath = "/users/genomics/jmontanes/EvolutionaryNanopore/AdditionalSamplesRiboseq/riboNovel-Scer/Scer/Correct_format_files/candidateORF.genepred.txt"
-outFilePath = "p.txt"
-featureChosen = "canonical,uORF,dORF"
-ATGmode = "T"
+#filePath = "/users/genomics/jmontanes/EvolutionaryNanopore/AdditionalSamplesRiboseq/riboNovel-Scer/Scer/Correct_format_files/candidateORF.genepred.txt"
+#outFilePath = "p.txt"
+#featureChosen = "canonical,uORF,dORF"
+#ATGmode = "T"
 featureChosenList = featureChosen.split(",")
 file = open(filePath,"r")
 outFile = open(outFilePath,"w+")
