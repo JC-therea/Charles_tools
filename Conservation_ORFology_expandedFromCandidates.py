@@ -29,18 +29,18 @@ if not MSA_dir_path.endswith("/"):
 ConserveduORFs_path = args.outFile
 
 # ScerORF_table_path = "/users/genomics/jmontanes/EvolutionaryNanopore/AdditionalSamplesRiboseq/riboNovel-Scer/Scer/Correct_format_files/candidateORF.genepred.fixed.noOv.txt"
-# SparORF_table_path = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/OutputsR/RibosomeProfilingStats/Spar_ORFs.tsv"
-# SbayORF_table_path = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/OutputsR/RibosomeProfilingStats/Sbay_ORFs.tsv"
-
-# Orthologues_table_path = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/OutputsR/Evolution/ORFevolution/Orthology_evolution_5utr.tsv"
-# MSA_dir_path = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/EvolutionNanopore/Outputs/Transcripts/UTR5/UTR5_alignments/"
+# SparORF_table_path = "/users/genomics/jmontanes/EvolutionaryNanopore/AdditionalSamplesRiboseq/riboNovel-Spar/Spar/Correct_format_files/candidateORF.genepred.fixed.noOv.txt"
+# SbayORF_table_path = "/users/genomics/jmontanes/EvolutionaryNanopore/AdditionalSamplesRiboseq/riboNovel-Sbay/Sbay/Correct_format_files/candidateORF.genepred.fixed.noOv.txt"
+#
+# Orthologues_table_path = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/OutputsR/One-to-one_orthologues.tsv"
+# MSA_dir_path = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/EvolutionNanopore/Outputs/Transcripts/transcriptAlignments/Fasta/"
 # ConserveduORFs_path = "Conserved_uORF.txt"
 
 genePredHeader = ["orfID", "chrom",	"strand", "start", "end", "ORFstart", "ORFend", "exonNumber", "StartExon", "EndExon"]
 patternTranscriptInit = r':(\d+):'
 patternTranscriptEnd = r'\|\d+:\d+:(\d+)\|'
 patternTranscriptType = r'\:\d+\|(\w+)\|'
-orfTypes = ["uORF", "ouORF", "dORF", "odORF"]
+orfTypes = ["canonical","uORF", "ouORF", "dORF", "odORF"]
 
 ORF_table = pd.read_csv(ScerORF_table_path, names=genePredHeader, sep="\t")
 ORF_table["transcript"] = ORF_table.orfID.replace(":.*", "", regex = True)
@@ -146,6 +146,37 @@ def returnOverlap(RefMSAst, RefMSAend, SpMSAst, SpMSAend):
             # Left and larger
             return(["Left", SpMSAend - RefMSAst])
 
+def GetPerIdPerGap(refSeq,outSeq):
+    if len(refSeq) != len(outSeq):
+        print("Different length!")
+        exit
+    perfMatch = 0.0
+    missMatch = 0.0
+    gapRef = 0.0
+    gapOut = 0.0
+    lenAlignment = len(refSeq)
+
+    # Check position by position the identity
+
+    for i in range(0, len(refSeq)):
+        refLetter = refSeq[i]
+        outLetter = outSeq[i]
+
+        if refLetter == outLetter:
+            perfMatch += 1
+        else:
+            if refLetter == "-" and outLetter != "-":
+                gapRef += 1
+            elif refLetter != "-" and outLetter == "-":
+                gapOut += 1
+            elif refLetter != "-" and outLetter != "-":
+                missMatch += 1
+            elif refLetter == "-" and outLetter == "-":
+                lenAlignment -= 1
+    if lenAlignment > 0:
+         return perfMatch/lenAlignment * 100, missMatch/lenAlignment * 100, gapRef/lenAlignment * 100, gapOut/lenAlignment * 100
+    else:
+        return 0, 100, 100, 100
 ########################################################################################
 ########################################################################################
 ########################################################################################
@@ -177,6 +208,10 @@ OutSpeciesORFEnd_list = []
 ORFOverlap = []
 ORFOverlapClass = []
 
+perIdentity = []
+perRefGaps = []
+perOutGaps = []
+
 for index, row in ORF_table.iterrows():
 
     orfID = row["orfID"]
@@ -185,7 +220,7 @@ for index, row in ORF_table.iterrows():
     ribORFstrand, nORF, transcriptLength = strand_nORF_transcriptLength.split("|")
     ScerribORFend, ORFType, StartCodon = ribORFend_ORFType_StartCodon.split("|")
 
-    if(ORFType not in ["uORF", "ouORF", "dORF", "odORF"]):
+    if(ORFType not in ["canonical", "uORF", "ouORF", "dORF", "odORF"]):
         continue
     gene = geneID.split("-T")[0]
     OGID = Orthologues_table["OGID"][Orthologues_table["Scer"] == gene].to_string(index = False).zfill(7) + ".msa.fa"
@@ -207,20 +242,37 @@ for index, row in ORF_table.iterrows():
     Spar_gene = ""
     Sbay = []
     Sbay_gene = ""
+    sequenceRef = ""
+    sequenceOutSp = ""
+
     for transcript in sequences:
         #print(transcript)
         if ScerMSAstart == 0 and ScerMSAend == 0:
             ScerMSAstart, ScerMSAend = GetMSAORFpos(str(sequences[transcript].seq).upper(), int(ScerribORFstart), int(ScerribORFend))
+            sequenceRef = str(sequences[transcript].seq).upper()
+
         elif transcript in Spar_genes:
             ORFstart, ORFend = GetORFpos(str(sequences[transcript].seq).upper(), ScerMSAstart, ScerMSAend)
             Spar.append(ORFstart)
             Spar.append(ORFend)
             Spar_gene = transcript
+            sequenceOutSp = str(sequences[transcript].seq).upper()
+            pedId, perMiss, perRefGap, perOutGap = GetPerIdPerGap(sequenceRef[ScerMSAstart:ScerMSAend],sequenceOutSp[ScerMSAstart:ScerMSAend])
+            perIdentity.append(pedId)
+            perRefGaps.append(perRefGap)
+            perOutGaps.append(perOutGap)
+
         elif transcript in Sbay_genes:
             ORFstart, ORFend = GetORFpos(str(sequences[transcript].seq).upper(), ScerMSAstart, ScerMSAend)
             Sbay.append(ORFstart)
             Sbay.append(ORFend)
             Sbay_gene = transcript
+            sequenceOutSp = str(sequences[transcript].seq).upper()
+            pedId, perMiss, perRefGap, perOutGap = GetPerIdPerGap(sequenceRef[ScerMSAstart:ScerMSAend],sequenceOutSp[ScerMSAstart:ScerMSAend])
+            perIdentity.append(pedId)
+            perRefGaps.append(perRefGap)
+            perOutGaps.append(perOutGap)
+
 
     # Now check if there is ORFs from both species
     # S.par
@@ -320,12 +372,15 @@ for index, row in ORF_table.iterrows():
                 ORFOverlapClass.append(ClassOv)
 
 # Create a set of all unique strings from both lists
+
 df = pd.DataFrame(list(zip(ScerOrfIDList, OGID_list, ScerMSA_start_list, ScerMSA_end_list, ScerStartORFinT_list, ScerEndORFinT_list,
                            OutSpecies,OutSpeciesORFid, OutSpeciesMSAStart_list, OutSpeciesMSAEnd_list, OutSpeciesORFstart_list, OutSpeciesORFEnd_list,
-                           ORFOverlap, ORFOverlapClass
+                           ORFOverlap, ORFOverlapClass,
+                           perIdentity, perRefGaps, perOutGaps
                            )), columns=['RefORF', 'OGID', 'Ref_MSA_start', 'Ref_MSA_end', 'Ref_orf_start', 'Ref_orf_end',
                                         'OutSpecies', 'OutSpeciesORF', 'OutS_MSA_start', 'OutS_MSA_end', 'OutS_orf_start', 'OutS_orf_end',
-                                        "NuclOverlap","ClassOverlap"])
+                                        "NuclOverlap","ClassOverlap",
+                                        "perIdentity", "perRefGap", "perOutGap"])
 
 # Output the DataFrame to TSV format
 df.to_csv(ConserveduORFs_path, sep='\t', index=False)

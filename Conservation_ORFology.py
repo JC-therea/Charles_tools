@@ -2,50 +2,97 @@ import pandas as pd
 from Bio import SeqIO
 import argparse
 
-parser = argparse.ArgumentParser(description="This programs needs the config file to work with the desired species",
-                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("-i", "--ORFlist", default="", type=str, help="path to the file that has all the valid ORFs from the reference species")
-parser.add_argument("-spar", "--ORFSpar", default="", type=str, help="path to the file that has all the ORFs from the alt species")
-parser.add_argument("-sbay", "--ORFSbay", default="", type=str, help="path to the file that has all the ORFs from the alt species")
-parser.add_argument("-orth", "--orthologs", default="", type=str, help="path to the tsv file that indicates the orthology of the genes")
-parser.add_argument("-msa", "--MSAdir", default="", type=str, help="path to the directory where are all the regions aligned")
-parser.add_argument("-o", "--outFile", default="", type=str, help="Name of the output file")
+# parser = argparse.ArgumentParser(description="This programs needs the config file to work with the desired species",
+#                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+# parser.add_argument("-i", "--ORFlist", default="", type=str, help="path to the file that has all the valid ORFs from the reference species, splitted by commas")
+# parser.add_argument("-OS", "--OutSpecies", default="", type=str, help="paths of the candidates files of the other species")
+# parser.add_argument("-orth", "--orthologs", default="", type=str, help="path to the tsv file that indicates the orthology of the genes")
+# parser.add_argument("-msa", "--MSAdir", default="", type=str, help="path to the directory where are all the regions aligned")
+# parser.add_argument("-o", "--outFile", default="", type=str, help="Name of the output file")
+#
+# #parser.add_argument("-orf", "--ORF_type", default="", type=str, help="Provide information about the type of ORF that is going to be studied")
+# #parser.add_argument("-d", "--table_of_lengths", default="", type=str, help="Table that include the information about the length of each transcript and its parts")
+#
+#
+# #######################################################################################
+# ############################### Inputs ################################################
+# #######################################################################################
+#
+#
+# args = parser.parse_args()
+#
+# ScerORF_table_path = args.ORFlist
+# outOrfs_paths = args.OutSpecies.split(",")
+#
+# Orthologues_table_path = args.orthologs
+# MSA_dir_path = args.MSAdir
+#
+# if not MSA_dir_path.endswith("/"):
+#     MSA_dir_path = MSA_dir_path + "/"
+#
+# ConservedORFs_path = args.outFile
 
-#parser.add_argument("-orf", "--ORF_type", default="", type=str, help="Provide information about the type of ORF that is going to be studied")
-#parser.add_argument("-d", "--table_of_lengths", default="", type=str, help="Table that include the information about the length of each transcript and its parts")
+ScerORF_table_path = "/users/genomics/jmontanes/EvolutionaryNanopore/AdditionalSamplesRiboseq/riboNovel-Scer/Scer/Correct_format_files/candidateORF.genepred.fixed.noOv.txt"
+outOrfs_paths = "/users/genomics/jmontanes/EvolutionaryNanopore/AdditionalSamplesRiboseq/riboNovel-Spar/Spar/Correct_format_files/candidateORF.genepred.fixed.noOv.txt","/users/genomics/jmontanes/EvolutionaryNanopore/AdditionalSamplesRiboseq/riboNovel-Sbay/Sbay/Correct_format_files/candidateORF.genepred.fixed.noOv.txt"
 
-args = parser.parse_args()
+Orthologues_table_path = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/OutputsR/One-to-one_orthologues.tsv"
+MSA_dir_path = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/EvolutionNanopore/Outputs/Transcripts/transcriptAlignments/Fasta/"
+ConservedORFs_path = "Conserved_uORF.tsv"
 
-ScerORF_table_path = args.ORFlist
-SparORF_table_path = args.ORFSpar
-SbayORF_table_path = args.ORFSbay
+genePredHeader = ["orfID", "chrom",	"strand", "start", "end", "ORFstart", "ORFend", "exonNumber", "StartExon", "EndExon"]
+patternTranscriptInit = r':(\d+):'
+patternTranscriptEnd = r'\|\d+:\d+:(\d+)\|'
+patternTranscriptType = r'\:\d+\|(\w+)\|'
+orfTypes = ["canonical","uORF", "ouORF", "dORF", "odORF"]
 
-Orthologues_table_path = args.orthologs
-MSA_dir_path = args.MSAdir
-
-if not MSA_dir_path.endswith("/"):
-    MSA_dir_path = MSA_dir_path + "/"
-
-ConserveduORFs_path = args.outFile
-
-# ScerORF_table_path = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/OutputsR/RibosomeProfilingStats/Scer_validuORFs.tsv"
-# SparORF_table_path = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/OutputsR/RibosomeProfilingStats/Spar_ORFs.tsv"
-# SbayORF_table_path = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/OutputsR/RibosomeProfilingStats/Sbay_ORFs.tsv"
-
-# Orthologues_table_path = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/OutputsR/Evolution/ORFevolution/Orthology_evolution_5utr.tsv"
-# MSA_dir_path = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/EvolutionNanopore/Outputs/Transcripts/UTR5/UTR5_alignments/"
-# ConserveduORFs_path = "Conserved_uORF.txt"
-
-ORF_table = pd.read_csv(ScerORF_table_path, sep = "\t")
-SparORF_table = pd.read_csv(SparORF_table_path, sep = "\t")
-SbayORF_table = pd.read_csv(SbayORF_table_path, sep = "\t")
+ORF_table = pd.read_csv(ScerORF_table_path, names=genePredHeader, sep="\t")
+ORF_table["transcript"] = ORF_table.orfID.replace(":.*", "", regex = True)
+ORF_table["gene"] = ORF_table.transcript.replace("-T[1-9]", "", regex = True)
+ORF_table["transcriptInit"] = ORF_table.orfID.str.extract(patternTranscriptInit).astype(int)
+ORF_table["transcriptEnd"] = ORF_table.orfID.str.extract(patternTranscriptEnd).astype(int)
+ORF_table["transcriptType"] = ORF_table.orfID.str.extract(patternTranscriptType)
+ORF_table = ORF_table[ORF_table.transcriptType.isin(orfTypes)]
 
 Orthologues_table = pd.read_csv(Orthologues_table_path, sep = "\t")
-Spar_genes = Orthologues_table["Spar"].to_list()
-Sbay_genes = Orthologues_table["Sbay"].to_list()
+spFinder = {}
+for sp in Orthologues_table.columns.to_list():
+    spFinder[sp] = Orthologues_table[sp].to_list()
 
-# Test
-### Fun to extract positions in MSA
+# get the list of pandas df
+
+dfOut_list = list()
+for file in outOrfs_paths:
+    outORF_table = pd.read_csv(file, names=genePredHeader, sep="\t")
+    outORF_table["transcript"] = outORF_table.orfID.replace(":.*", "", regex=True)
+    outORF_table["gene"] = outORF_table.transcript.replace("-T[1-9]", "", regex=True)
+    outORF_table["transcriptInit"] = outORF_table.orfID.str.extract(patternTranscriptInit).astype(int)
+    outORF_table["transcriptEnd"] = outORF_table.orfID.str.extract(patternTranscriptEnd).astype(int)
+    outORF_table["transcriptType"] = outORF_table.orfID.str.extract(patternTranscriptType)
+    outORF_table = outORF_table[outORF_table.transcriptType.isin(orfTypes)]
+
+    spName = ""
+
+    # Check which species is
+    for transcript in outORF_table.transcript.replace("-T[1-9]", "", regex=True):
+        for sp in spFinder.keys():
+            if transcript in spFinder[sp]:
+                spName = sp
+                break
+        if spName != "":
+            break
+
+    outORF_table["Species"] = spName
+    dfOut_list.append(outORF_table)
+
+########################################################################################
+########################################################################################
+########################################################################################
+
+########################################################################################
+################################ Functions #############################################
+########################################################################################
+
+### To extract positions in MSA
 
 def GetMSAORFpos(nuclSeq,ORFStart,ORFEnd):
     MSApos = 0
@@ -58,15 +105,17 @@ def GetMSAORFpos(nuclSeq,ORFStart,ORFEnd):
         if nucl == "-":
             MSApos += 1
         else:
-            MSApos += 1
-            ORFStart_local = ORFStart_local - 1
-            ORFEnd_local = ORFEnd_local - 1
-
             if ORFStart_local == 1:
                 MSAstart = MSApos
+
+            ORFStart_local = ORFStart_local - 1
+
             if ORFEnd_local == 1:
                 MSAend = MSApos
                 break
+
+            ORFEnd_local = ORFEnd_local - 1
+            MSApos += 1
 
     return MSAstart, MSAend
 
@@ -97,118 +146,199 @@ def GetORFpos(nuclSeq,MSAstart,MSAend):
 
     return ORFStart_local, ORFEnd_local
 
-Spar_orthoORFs = 0
-Sbay_orthoORFs = 0
+def returnOverlap(RefMSAst, RefMSAend, SpMSAst, SpMSAend):
+    if SpMSAst >= RefMSAst:
+        if SpMSAst >= RefMSAst and SpMSAend < RefMSAend:
+            # ORF inside the reference
+            return(["Inner", SpMSAend - SpMSAst])
+        elif SpMSAend == RefMSAend and SpMSAst == RefMSAst:
+            # ORF perfect match
+            return (["Perfect match", RefMSAend - RefMSAst])
+        else:
+            # Right end larger
+            return(["Right", RefMSAend - SpMSAst])
+    else:
+        if SpMSAend > RefMSAend:
+            # Overlaps the ORF of the reference species
+            return(["Outer", RefMSAend - RefMSAst])
+        else:
+            # Left and larger
+            return(["Left", SpMSAend - RefMSAst])
+
+def GetPerIdPerGap(refSeq,outSeq):
+    if len(refSeq) != len(outSeq):
+        print("Different length!")
+        exit
+    perfMatch = 0.0
+    missMatch = 0.0
+    gapRef = 0.0
+    gapOut = 0.0
+    lenAlignment = len(refSeq)
+
+    # Check position by position the identity
+
+    for i in range(0, len(refSeq)):
+        refLetter = refSeq[i]
+        outLetter = outSeq[i]
+
+        if refLetter == outLetter:
+            perfMatch += 1
+        else:
+            if refLetter == "-" and outLetter != "-":
+                gapRef += 1
+            elif refLetter != "-" and outLetter == "-":
+                gapOut += 1
+            elif refLetter != "-" and outLetter != "-":
+                missMatch += 1
+            elif refLetter == "-" and outLetter == "-":
+                lenAlignment -= 1
+    if lenAlignment > 0:
+         return perfMatch/lenAlignment * 100, missMatch/lenAlignment * 100, gapRef/lenAlignment * 100, gapOut/lenAlignment * 100
+    else:
+        return 0, 100, 100, 100
+########################################################################################
+########################################################################################
+########################################################################################
+
+outOrthoORFs = 0
 orthoORFs = 0
 
-ConserveduORFs = open(ConserveduORFs_path, "w+")
-ORF_in_Spar = []
-Spar_ORFs = {}
-ORF_in_Sbay = []
-Sbay_ORFs = {}
+ConservedORFs = open(ConservedORFs_path, "w+")
+
+# Lists
+
+refORF = []
+OGID_list = []
+refMSA_startList = []
+refMSA_endList = []
+refTranscript_startList = []
+refTranscript_endList = []
+
+OutSpecies = []
+OutSpeciesORF = []
+OutSpeciesGene = []
+OutSpeciesMSA_startList = []
+OutSpeciesMSA_endList = []
+OutSpeciesTranscript_startList = []
+OutSpeciesTranscript_endList = []
+
+ORFOverlap = []
+ORFOverlapClass = []
+
+perIdentity = []
+perRefGaps = []
+perOutGaps = []
 
 for index, row in ORF_table.iterrows():
 
     orfID = row["orfID"]
-    gene = row["gene"]
 
-    #spsAlign = Orthologues_table["speciesAligment"][Orthologues_table["Scer"] == gene].to_string(index = False)
-    OGID = Orthologues_table["OGID"][Orthologues_table["Scer"] == gene].to_string(index = False).zfill(7) + ".mfa"
+    geneID, ribORFchr, strand_nORF_transcriptLength, refRibORFstart, ribORFend_ORFType_StartCodon = orfID.split(":")
+    ribORFstrand, nORF, transcriptLength = strand_nORF_transcriptLength.split("|")
+    refRibORFend, ORFType, StartCodon = ribORFend_ORFType_StartCodon.split("|")
+
+    if(ORFType not in ["canonical", "uORF", "ouORF", "dORF", "odORF"]):
+        continue
+    ####################
+    # Manual fixing
+    gene = geneID.split("-T")[0]
+    OGID = Orthologues_table["OGID"][Orthologues_table["Scer"] == gene].to_string(index = False).zfill(7) + ".msa.fa"
+    OGID_clean = OGID.split(".")[0]
+    ####################
+    ####################
+
+    if OGID_clean != "0004602":
+        continue
+
+    # The following means that it doesn't have orthologues
     if OGID.startswith("Series([]"):
         continue
+
     MSA_path = MSA_dir_path + OGID
 
-    geneID, ribORFchr, strand_nORF_transcriptLength, ribORFstart, ribORFend_ORFType_StartCodon = orfID.split(":")
-    ribORFstrand, nORF, transcriptLength = strand_nORF_transcriptLength.split("|")
-    ribORFend, ORFType, StartCodon = ribORFend_ORFType_StartCodon.split("|")
-
-    transcriptID_list = []
+    # There is a MSA alignment?
     try:
         sequences = SeqIO.index(MSA_path, "fasta")
     except:
         continue
 
-    # S.cerevisiae is always the first
-    MSAstart = 0
-    MSAend = 0
-    Spar = []
-    Spar_gene = ""
-    Sbay = []
-    Sbay_gene = ""
+    # The reference is always the first
+    refMSAstart = 0
+    refMSAend = 0
+
+    sequenceRef = ""
+    sequenceOutSp = ""
+
     for transcript in sequences:
-        #print(transcript)
-        if MSAstart == 0 and MSAend == 0:
-            MSAstart, MSAend = GetMSAORFpos(str(sequences[transcript].seq).upper(), int(ribORFstart), int(ribORFend))
-        elif transcript in Spar_genes:
-            ORFstart, ORFend = GetORFpos(str(sequences[transcript].seq).upper(), MSAstart, MSAend)
-            Spar.append(ORFstart)
-            Spar.append(ORFend)
-            Spar_gene = transcript
-        elif transcript in Sbay_genes:
-            ORFstart, ORFend = GetORFpos(str(sequences[transcript].seq).upper(), MSAstart, MSAend)
-            Sbay.append(ORFstart)
-            Sbay.append(ORFend)
-            Sbay_gene = transcript
 
-    # Now check if there is ORFs from both species
-    # S.par
-    if len(Spar_gene) > 2 and sum(SparORF_table.gene == Spar_gene) > 0:
-        SparORF_table_subset = SparORF_table[SparORF_table.gene == Spar_gene].copy()
-        SparORF_table_subset['within_window'] = (SparORF_table_subset['transcriptInit'] >= Spar[0]) & (SparORF_table_subset['transcriptEnd'] <= Spar[1])
+        if refMSAstart == 0 and refMSAend == 0:
+            refMSAstart, refMSAend = GetMSAORFpos(str(sequences[transcript].seq).upper(), int(refRibORFstart), int(refRibORFend))
+            sequenceRef = str(sequences[transcript].seq).upper()
+        else:
+            for outDf in dfOut_list:
+                outGenes = outDf.gene.unique().tolist()
+                outTranscripts = outDf.transcript.unique().tolist()
+                if transcript in outGenes:
+                    ORFstart, ORFend = GetORFpos(str(sequences[transcript].seq).upper(), refMSAstart, refMSAend)
 
-        # Create a new column to store whether each transcript is partially within the window
-        SparORF_table_subset['partially_within_window'] = ((SparORF_table_subset['transcriptInit'] < Spar[0]) & (SparORF_table_subset['transcriptEnd'] > Spar[0])) | (
-                    (SparORF_table_subset['transcriptInit'] < Spar[1]) & (SparORF_table_subset['transcriptEnd'] > Spar[1]))
+                    if len(list(set(str(sequences[transcript].seq).upper()[refMSAstart:refMSAend]))) == 1:
+                        continue
 
-        # Filter the transcripts that are either completely within the window or partially within the window with at least 50% of their length inside the window
-        SparORF_filtered_df = SparORF_table_subset[((SparORF_table_subset['within_window']) | (SparORF_table_subset['partially_within_window']))].copy()
+                    # Filter main df
 
-        if len(SparORF_filtered_df) >= 1:
-            Spar_orthoORFs += 1
-            ORF_in_Spar.append(orfID)
-            Spar_ORFs[orfID] = "{-}".join(SparORF_filtered_df["orfID"])
+                    mask = ((ORFstart <= outDf.transcriptEnd) & (ORFend >= outDf.transcriptInit) & (transcript == outDf.gene))
+                    subDf = outDf[mask].copy()
 
-    if len(Sbay_gene) > 2 and sum(SbayORF_table.gene == Sbay_gene) > 0:
-        SbayORF_table_subset = SbayORF_table[SbayORF_table.gene == Sbay_gene].copy()
-        SbayORF_table_subset['within_window'] = (SbayORF_table_subset['transcriptInit'] >= Sbay[0]) & (
-                SparORF_table_subset['transcriptEnd'] <= Sbay[1])
+                    if len(subDf) == 0:
+                        continue
 
-        # Create a new column to store whether each transcript is partially within the window
-        SbayORF_table_subset['partially_within_window'] = ((SbayORF_table_subset['transcriptInit'] < Sbay[0]) & (
-                SbayORF_table_subset['transcriptEnd'] > Sbay[0])) | (
-                                                                  (SbayORF_table_subset['transcriptInit'] < Sbay[
-                                                                      1]) & (SbayORF_table_subset['transcriptEnd'] >
-                                                                             Sbay[1]))
 
-        # Filter the transcripts that are either completely within the window or partially within the window with at least 50% of their length inside the window
-        SbayORF_filtered_df = SbayORF_table_subset[
-            ((SbayORF_table_subset['within_window']) | (SbayORF_table_subset['partially_within_window']))].copy()
+                    for i in subDf.index.to_list():
+                        # First add the information of the reference
+                        refORF.append(orfID)
+                        OGID_list.append(OGID_clean)
+                        refMSA_startList.append(refMSAstart + 1)
+                        refMSA_endList.append(refMSAend)
+                        refTranscript_startList.append(int(refRibORFstart))
+                        refTranscript_endList.append(int(refRibORFend) - 1)
 
-        if len(SbayORF_filtered_df) >= 1:
-            Sbay_orthoORFs += 1
-            ORF_in_Sbay.append(orfID)
-            Sbay_ORFs[orfID] = "{-}".join(SbayORF_filtered_df["orfID"])
+                        # Information about the out Species overlap
+
+                        OutSpecies.append(subDf["Species"][i])
+                        OutSpeciesORF.append(subDf["orfID"][i])
+
+                        outSpGeneID, outSpRibORFchr, outSpStrand_nORF_transcriptLength, outSpRibORFstart, outSpRibORFend_ORFType_StartCodon = subDf["orfID"][i].split(":")
+                        outSpRibORFstrand, outSpnORF, outSpTranscriptLength = outSpStrand_nORF_transcriptLength.split("|")
+                        outSpRibORFend, outSpORFType, outSpStartCodon = outSpRibORFend_ORFType_StartCodon.split("|")
+
+                        outSpMSAstart, outSpMSAend = GetMSAORFpos(str(sequences[transcript].seq).upper(), int(outSpRibORFstart),int(outSpRibORFend))
+
+                        OutSpeciesMSA_startList.append(outSpMSAstart + 1)
+                        OutSpeciesMSA_endList.append(outSpMSAend)
+                        OutSpeciesTranscript_startList.append(outSpRibORFstart)
+                        OutSpeciesTranscript_endList.append(int(outSpRibORFend) - 1)
+
+                        ClassOv, NuclOv = returnOverlap(refMSAstart, refMSAend, outSpMSAstart, outSpMSAend)
+                        ORFOverlap.append(NuclOv)
+                        ORFOverlapClass.append(ClassOv)
+
+                        OutSpeciesGene.append(transcript)
+                        sequenceOutSp = str(sequences[transcript].seq).upper()
+                        pedId, perMiss, perRefGap, perOutGap = GetPerIdPerGap(sequenceRef[refMSAstart:refMSAend],sequenceOutSp[refMSAstart:refMSAend])
+                        perIdentity.append(pedId)
+                        perRefGaps.append(perRefGap)
+                        perOutGaps.append(perOutGap)
+
 
 # Create a set of all unique strings from both lists
-unique_transcripts = set(ORF_in_Spar + ORF_in_Sbay)
-Spar_listTranscripts = []
 
-Sbay_listTranscripts = []
-
-for transcript in unique_transcripts:
-
-    if transcript in Spar_ORFs.keys():
-        Spar_listTranscripts.append(Spar_ORFs[transcript])
-    else:
-        Spar_listTranscripts.append("-")
-
-
-    if transcript in Sbay_ORFs.keys():
-        Sbay_listTranscripts.append(Sbay_ORFs[transcript])
-    else:
-        Sbay_listTranscripts.append("-")
-
-df = pd.DataFrame(list(zip(unique_transcripts, Spar_listTranscripts, Sbay_listTranscripts)), columns=['ORF', 'Spar_ORFs', 'Sbay_ORFs'])
-
+df = pd.DataFrame(list(zip(refORF, OGID_list, refMSA_startList, refMSA_endList, refTranscript_startList, refTranscript_endList,
+                           OutSpecies, OutSpeciesORF, OutSpeciesMSA_startList, OutSpeciesMSA_endList, OutSpeciesTranscript_startList, OutSpeciesTranscript_endList,
+                           ORFOverlap, ORFOverlapClass,
+                           perIdentity, perRefGaps, perOutGaps
+                           )), columns=['RefORF', 'OGID', 'Ref_MSA_start', 'Ref_MSA_end', 'Ref_orf_start', 'Ref_orf_end',
+                                        'OutSpecies', 'OutSpeciesORF', 'OutS_MSA_start', 'OutS_MSA_end', 'OutS_orf_start', 'OutS_orf_end',
+                                        "NuclOverlap","ClassOverlap",
+                                        "perIdentity", "perRefGap", "perOutGap"])
 # Output the DataFrame to TSV format
-df.to_csv(ConserveduORFs_path, sep='\t', index=False)
+df.to_csv(ConservedORFs_path, sep='\t', index=False)

@@ -4,13 +4,13 @@ import argparse
 
 parser = argparse.ArgumentParser(description="This programs needs the config file to work with the desired species",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("-i", "--orfology", default="", type=str, help="path to the output tsv file from Conservation_ORFology_expandedFromCandidates")
+parser.add_argument("-i", "--ORFlist", default="", type=str, help="path to the file that has all the valid ORFs from the reference species")
 parser.add_argument("-msa", "--MSAdir", default="", type=str, help="path to the directory where are all the regions aligned")
 parser.add_argument("-o", "--outFile", default="", type=str, help="Name of the output file")
 
 args = parser.parse_args()
 
-orfology_table_path = args.orfology
+ScerORF_table_path = args.ORFlist
 MSA_dir_path = args.MSAdir
 
 # orfology_table_path = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/EvolutionNanopore/Outputs/Transcripts/ConservedORFs_full.tsv"
