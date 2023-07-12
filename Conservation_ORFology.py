@@ -155,20 +155,20 @@ def returnOverlap(RefMSAst, RefMSAend, SpMSAst, SpMSAend):
     if SpMSAst >= RefMSAst:
         if SpMSAst >= RefMSAst and SpMSAend < RefMSAend:
             # ORF inside the reference
-            return(["Inner", SpMSAend - SpMSAst + 1])
+            return ["Inner", SpMSAend - SpMSAst + 1]
         elif SpMSAend == RefMSAend and SpMSAst == RefMSAst:
             # ORF perfect match
-            return (["Perfect match", RefMSAend - RefMSAst])
+            return ["Perfect match", RefMSAend - RefMSAst]
         else:
             # Right end larger
-            return(["Right", RefMSAend - SpMSAst])
+            return ["Right", RefMSAend - SpMSAst]
     else:
         if SpMSAend > RefMSAend:
             # Overlaps the ORF of the reference species
-            return(["Outer", RefMSAend - RefMSAst])
+            return ["Outer", RefMSAend - RefMSAst]
         else:
             # Left and larger
-            return(["Left", SpMSAend - RefMSAst])
+            return ["Left", SpMSAend - RefMSAst]
 
 def GetPerIdPerGap(refSeq,outSeq):
     if len(refSeq) != len(outSeq):
@@ -241,7 +241,7 @@ for index, row in ORF_table.iterrows():
     ribORFstrand, nORF, transcriptLength = strand_nORF_transcriptLength.split("|")
     refRibORFend, ORFType, StartCodon = ribORFend_ORFType_StartCodon.split("|")
 
-    if(ORFType not in ["canonical", "uORF", "ouORF", "dORF", "odORF"]):
+    if ORFType not in ["canonical", "uORF", "ouORF", "dORF", "odORF"] :
         continue
     ####################
     # Manual fixing
