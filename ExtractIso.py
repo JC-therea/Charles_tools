@@ -82,10 +82,27 @@ for index, row in STGTF_onlyIso.iterrows():
 
 defaultAnnot = pd.read_table(defaultAnnotPath, sep='\t', comment="#", dtype='str', header=None)
 defaultAnnot.columns = ["chr", "source", "type", "start", "end", "score", "strand", "phase", "attributes"]
+defaultAnnotmRNA= defaultAnnot[defaultAnnot.type == "mRNA"].copy()
+mRNA = defaultAnnotmRNA["attributes"].str.replace('ID=', '', regex=True).str.replace(';.*', '', regex=True).tolist()
+gene = defaultAnnotmRNA["attributes"].str.replace('.*Parent=', '', regex=True).str.replace(';.*', '', regex=True).tolist()
+mRNA2gene = {}
+for i in range(0, len(mRNA)):
+    if mRNA[i] not in mRNA2gene.keys():
+        mRNA2gene[mRNA[i]] = gene[i]
+
 defaultAnnotCDS = defaultAnnot[defaultAnnot.type == "CDS"].copy()
-Gene_name = defaultAnnotCDS["attributes"].str.replace('ID=', '', regex=True)
-Gene_name = Gene_name.str.replace('\..:.*', '', regex=True)
-defaultAnnotCDS["Gene"] = Gene_name
+Transcript_name = defaultAnnotCDS["attributes"].str.replace('.*Parent=', '', regex=True).str.replace(';.*', '', regex=True)
+defaultAnnotCDS["Transcript"] = Transcript_name
+defaultAnnotCDS["Gene"] = "MISS"
+Gene_name = []
+
+for index, row in defaultAnnotCDS.iterrows():
+    if row["Transcript"] not in mRNA2gene.keys():
+        row["Gene"] = "MISS"
+    else:
+        row["Gene"] = mRNA2gene[row["Transcript"]]
+
+Gene_name = defaultAnnotCDS["Gene"]
 
 # Record ncRNA
 ncRNA_Genes = defaultAnnot["attributes"][defaultAnnot.type.isin(["ncRNA"])].str.replace('.*Parent=', '', regex=True).str.replace('\..:.*', '', regex=True)
@@ -103,6 +120,7 @@ for gene in Gene_name_u:
     Ref_gene_subset_str = Ref_gene_subset[0]
 
     defaultAnnotCDS_subset = defaultAnnotCDS[:][defaultAnnotCDS.Gene.isin([Ref_gene_subset_str])]
+
     CDS_coordinates = defaultAnnotCDS_subset["start"].unique().tolist() + defaultAnnotCDS_subset["end"].unique().tolist()
     CDS_coordinates = [int(item) for item in CDS_coordinates]
     CDS_coordinates.sort()
