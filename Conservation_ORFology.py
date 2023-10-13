@@ -12,10 +12,6 @@ parser.add_argument("-orth", "--orthologs", default="", type=str, help="path to 
 parser.add_argument("-msa", "--MSAdir", default="", type=str, help="path to the directory where are all the regions aligned")
 parser.add_argument("-o", "--outFile", default="", type=str, help="Name of the output file")
 
-#parser.add_argument("-orf", "--ORF_type", default="", type=str, help="Provide information about the type of ORF that is going to be studied")
-#parser.add_argument("-d", "--table_of_lengths", default="", type=str, help="Table that include the information about the length of each transcript and its parts")
-
-
 #######################################################################################
 ############################### Inputs ################################################
 #######################################################################################
@@ -34,8 +30,8 @@ if not MSA_dir_path.endswith("/"):
 
 ConservedORFs_path = args.outFile
 
-# ScerORF_table_path = "/users/genomics/jmontanes/EvolutionaryNanopore/AdditionalSamplesRiboseq/riboNovel-Scer/Scer/Correct_format_files/candidateORF.genepred.fixed.noOv.txt"
-# outOrfs_paths = "/users/genomics/jmontanes/EvolutionaryNanopore/AdditionalSamplesRiboseq/riboNovel-Spar/Spar/Correct_format_files/candidateORF.genepred.fixed.noOv.txt","/users/genomics/jmontanes/EvolutionaryNanopore/AdditionalSamplesRiboseq/riboNovel-Sbay/Sbay/Correct_format_files/candidateORF.genepred.fixed.noOv.txt"
+# ScerORF_table_path = "/users/genomics/jmontanes/EvolutionaryNanopore/AdditionalSamplesRiboseq/riboNovel-Scer/Scer/Correct_format_files/candidateORF.genepred.NoOv.txt"
+# outOrfs_paths = "/users/genomics/jmontanes/EvolutionaryNanopore/AdditionalSamplesRiboseq/riboNovel-Spar/Spar/Correct_format_files/candidateORF.genepred.NoOv.txt","/users/genomics/jmontanes/EvolutionaryNanopore/AdditionalSamplesRiboseq/riboNovel-Sbay/Sbay/Correct_format_files/candidateORF.genepred.NoOv.txt"
 #
 # Orthologues_table_path = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/OutputsR/One-to-one_orthologues.tsv"
 # MSA_dir_path = "/home/jmontanes/Documents/EvolutionNanopore/Outputs/EvolutionNanopore/Outputs/Transcripts/transcriptAlignments/Fasta/"
@@ -251,10 +247,6 @@ for index, row in ORF_table.iterrows():
     ####################
     ####################
 
-    # Testing
-    # if OGID_clean != "0004603":
-    #    continue
-
     # The following means that it doesn't have orthologues
     if OGID.startswith("Series([]"):
         continue
@@ -276,11 +268,16 @@ for index, row in ORF_table.iterrows():
 
     for transcript in sequences:
 
+        # Indicate and store in refMSA objects the sequence and the position in the MSA
         if refMSAstart == 0 and refMSAend == 0:
             refMSAstart, refMSAend = GetMSAORFpos(str(sequences[transcript].seq).upper(), int(refRibORFstart), int(refRibORFend))
             sequenceRef = str(sequences[transcript].seq).upper()
+
+        # If we already stored then look at the other sequences
         else:
+            # Check each ORF df of each out species
             for outDf in dfOut_list:
+                outSpecies = outDf.Species.unique()[0]
                 outGenes = outDf.gene.unique().tolist()
                 outTranscripts = outDf.transcript.unique().tolist()
                 if transcript in outGenes:
@@ -294,7 +291,35 @@ for index, row in ORF_table.iterrows():
                     mask = ((outDf.transcriptEnd > ORFstart) & (outDf.transcriptInit < ORFend) & (outDf.gene == transcript))
                     subDf = outDf[mask].copy()
 
+                    # If there is no ORF overlapping store it anyway
+
                     if len(subDf) == 0:
+
+                        sequenceOutSp = str(sequences[transcript].seq).upper()
+                        pedId, perMiss, perRefGap, perOutGap = GetPerIdPerGap(sequenceRef[refMSAstart:refMSAend],
+                                                                              sequenceOutSp[refMSAstart:refMSAend])
+                        refORF.append(orfID)
+                        OGID_list.append(OGID_clean)
+                        refMSA_startList.append(refMSAstart + 1)
+                        refMSA_endList.append(refMSAend + 1)
+                        refTranscript_startList.append(int(refRibORFstart))
+                        refTranscript_endList.append(int(refRibORFend) - 1)
+
+                        OutSpeciesMSA_startList.append(refMSAstart + 1)
+                        OutSpeciesMSA_endList.append(refMSAend + 2)
+                        OutSpeciesTranscript_startList.append(0)
+                        OutSpeciesTranscript_endList.append(0)
+
+                        OutSpecies.append(outSpecies)
+                        OutSpeciesORF.append("noOrfDetected")
+                        ORFOverlap.append(0)
+                        ORFOverlapClass.append("noOrfDetected")
+                        OutSpeciesGene.append(transcript)
+
+                        perIdentity.append(pedId)
+                        perRefGaps.append(perRefGap)
+                        perOutGaps.append(perOutGap)
+
                         continue
 
 
