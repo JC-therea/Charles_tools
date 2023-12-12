@@ -20,7 +20,7 @@ def get_args():
 
 args = get_args()
 outputPath = args.output_file
-#CDSPath = args.output_file + "CDS_N_new_method.fa"
+CDSPath = args.output_file + "CDS.fna"
 
 GENOME = args.genome
 GFF = args.annotation_file
@@ -32,7 +32,7 @@ Output_path = outputPath
 #VCF_path = "/home/jmontanes/Documents/0-Important_files/Insecta/PNPS/Light_CDS_only_parsed_Dmel_SNP.vcf"
 
 Output = open(outputPath,"w+")
-#written_sequences = open(CDSPath, "w+")
+written_sequences = open(CDSPath, "w+")
 
 
 def create_codons(Nucleotide_sequence):
@@ -65,7 +65,15 @@ def PNPS_searcher(sequence, start_exons, end_exons, SNP_positions, SNP_alternati
         for i in range(0, len(start_exons)):
 
             global_exon_start = start_exons[i]
-            global_exon_end = end_exons[i]
+
+            ## New
+            if i == (len(start_exons) - 1):
+                global_exon_end = end_exons[i] + 3
+            else:
+                global_exon_end = end_exons[i]
+            ####
+
+            #global_exon_end = end_exons[i]
             exon = sequence[global_exon_start:global_exon_end]
 
             SNPs_pos_in_exon = SNP_positions[(SNP_positions >= global_exon_start) & (SNP_positions < global_exon_end)]
@@ -114,7 +122,7 @@ def PNPS_searcher(sequence, start_exons, end_exons, SNP_positions, SNP_alternati
         else:
             fail_prop = 0
 
-        #written_sequences.write(full_CDS_seq + "\n")
+        written_sequences.write(full_CDS_seq + "\n")
 
         return (PN, PS, fail_prop)
 
@@ -122,7 +130,14 @@ def PNPS_searcher(sequence, start_exons, end_exons, SNP_positions, SNP_alternati
 
         for i in range(len(start_exons) - 1, -1, -1):
 
-            global_exon_start = start_exons[i]
+            ## New
+            if i == (0):
+                global_exon_start = start_exons[i] - 3
+            else:
+                global_exon_start = start_exons[i]
+            ####
+
+            #global_exon_start = start_exons[i]
             global_exon_end = end_exons[i]
             exon = sequence[global_exon_start:global_exon_end]
 
@@ -174,7 +189,7 @@ def PNPS_searcher(sequence, start_exons, end_exons, SNP_positions, SNP_alternati
             fail_prop = float(Fail_reference) / len(SNPs_local_pos) * 100
         else:
             fail_prop = 0
-        #written_sequences.write(full_CDS_seq + "\n")
+        written_sequences.write(full_CDS_seq + "\n")
         return (PN, PS, fail_prop)
 
 
@@ -245,7 +260,7 @@ for fasta in fasta_sequences:
             Ends = CDS_table_v2_protein_subset.End.values
             # print(Protein)
             # print(Strand)
-            #written_sequences.write(">" + Protein + "\n")
+            written_sequences.write(">" + Protein + "\n")
             Proteins_PNPS[Protein][0], Proteins_PNPS[Protein][1], Proteins_PNPS[Protein][2] = PNPS_searcher(
                 chromosome_seq, (Starts - 1), Ends, (SNP_table_v2_subset.Position - 1), SNP_table_v2_subset.Alternative,
                 SNP_table_v2_subset.Reference, Strand)
