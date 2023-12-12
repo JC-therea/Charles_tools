@@ -19,13 +19,17 @@ def get_args():
     return parser.parse_args()
 
 args = get_args()
-outputPath = args.output_file + "PNPS_per_protein.tsv"
+outputPath = args.output_file
 #CDSPath = args.output_file + "CDS_N_new_method.fa"
 
 GENOME = args.genome
 GFF = args.annotation_file
 VCF_path = args.vcf
 Output_path = outputPath
+
+### tmp paths
+
+#VCF_path = "/home/jmontanes/Documents/0-Important_files/Insecta/PNPS/Light_CDS_only_parsed_Dmel_SNP.vcf"
 
 Output = open(outputPath,"w+")
 #written_sequences = open(CDSPath, "w+")
@@ -215,8 +219,7 @@ print("Load GFF file in " + str(datetime.now() - startTime))
 print("Reading genome by chromosomes...")
 startTime = datetime.now()
 
-# Change this part to make it variable from the vcf file
-allowed_chr = ["2L", "2R", "3L", "3R", "4", "X"]
+allowed_chr = SNP_table_v2["Chr"].unique().tolist()
 Proteins_PNPS = {}
 
 for protein in CDS_table_v2.Protein.unique():
