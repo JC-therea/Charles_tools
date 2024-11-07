@@ -1,3 +1,5 @@
+
+
 import sys
 
 def parse_attributes(attributes):
@@ -49,7 +51,7 @@ def process_gtf(input_gtf, reference_gtf, output_gtf):
                 if 'similar_reference_id' in attributes_dict:
 
                     transcript_id = attributes_dict['transcript_id']
-                    reference_id = attributes_dict['similar_reference_id']
+                    reference_id = attributes_dict['gene_id'].split("-G1")[0]
 
                     if reference_id in reference_transcripts:
                         equivalence_ref[transcript_id] = reference_id
@@ -80,7 +82,7 @@ def process_gtf(input_gtf, reference_gtf, output_gtf):
                 if 'similar_reference_id' in attributes_dict.keys():
 
                     transcript_id = attributes_dict['transcript_id']
-                    reference_id = attributes_dict['similar_reference_id']
+                    reference_id = attributes_dict['gene_id'].split("-G1")[0]
 
                     if reference_id in reference_transcripts:
 
