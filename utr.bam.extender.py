@@ -17,24 +17,51 @@ def gff2pd(file):
                 end = int(parts[4])
                 strand = parts[6]
                 attr = parts[8]
-                gene_id = [field.split("=")[1] for field in attr.split(";") if field.startswith("ID")][0]
+                if feature != 'CDS':
+                    gene_id = [field.split("=")[1] for field in attr.split(";") if field.startswith("ID")][0]
+                if feature == 'CDS':
+                    gene_id = attr.split("Parent=")[1].split(";")[0]
                 regions.append({"chrom": chrom, "feature": feature, "start": start, "end": end, "strand": strand, "gene_id": gene_id})
     return pd.DataFrame(regions)
 
+def geneId2transcriptId(file):
+    geneId2transcriptId = {}
+    with open(file, 'r') as f:
+        for line in f:
+            if not line.startswith("#"):
+                parts = line.strip().split("\t")
+                chrom = parts[0]
+                feature = parts[2]
+                start = int(parts[3])
+                end = int(parts[4])
+                strand = parts[6]
+                attr = parts[8]
+                id = [field.split("=")[1] for field in attr.split(";") if field.startswith("ID")][0]
+                if feature == "mRNA" or feature == "transcript":
+                    gene_id = attr.split("Parent=")[1].split(";")[0]
+                    geneId2transcriptId[gene_id] = id
+    return geneId2transcriptId
+
+
 # Función para calcular el pico máximo en cada CDS
 def calculate_max_coverage(gff_df, coverage_df):
-    coverage_per_transcript = []
-    transcripts_df = gff_df[gff_df['feature'] == 'transcript']
+    if gff_df['feature'].str.contains('transcript', regex=True).any():
+        transcriptName = "transcript"
+    if gff_df['feature'].str.contains('mRNA', regex=True).any():
+        transcriptName = "mRNA"
 
-    start_df = transcripts_df[['chrom', 'start', 'gene_id', 'strand']].merge(
+    transcripts_df = gff_df[gff_df['feature'] == transcriptName]
+    coverage_per_transcript = []
+
+    start_df = transcripts_df[['chrom', 'feature', 'start', 'gene_id', 'strand']].merge(
         coverage_df, left_on=['chrom', 'start'], right_on=['chrom', 'pos'], how='left'
     ).rename(columns={'coverage': 'start_coverage'})
 
-    end_df = transcripts_df[['chrom', 'end', 'gene_id', 'strand']].merge(
+    end_df = transcripts_df[['chrom', 'feature', 'end', 'gene_id', 'strand']].merge(
         coverage_df, left_on=['chrom', 'end'], right_on=['chrom', 'pos'], how='left'
     ).rename(columns={'coverage': 'end_coverage'})
 
-    merged_df = pd.merge(start_df[['gene_id', 'chrom', 'start', 'strand', 'start_coverage']],
+    merged_df = pd.merge(start_df[['gene_id', 'feature', 'chrom', 'start', 'strand', 'start_coverage']],
                          end_df[['gene_id', 'end', 'end_coverage']], on='gene_id', how='left')
     return merged_df
 
@@ -48,16 +75,19 @@ def extend_transcripts(gff_df_coverage, coverage_df, threshold=0.1, min_coverage
         chrom, start, start_coverage, end, end_coverage = row['chrom'], row['start'], row['start_coverage'], row['end'], row['end_coverage']
 
         # Determinar umbral de cobertura
+        # New part here!
         start_threshold = max(start_coverage * threshold, min_coverage)
+        start_upper_treshold = start_coverage * 2
         end_threshold = max(end_coverage * threshold, min_coverage)
+        end_upper_treshold = end_coverage * 2
 
         # Filtrar datos de cobertura una sola vez por cada cromosoma
         if chrom in grouped_coverage.groups:
             chrom_coverage_df = grouped_coverage.get_group(chrom)
 
             # Obtener posiciones de inicio y fin extendidas basadas en el umbral
-            start_filtered = chrom_coverage_df.loc[(chrom_coverage_df['coverage'] < start_threshold) & (chrom_coverage_df['pos'] < start), 'pos']
-            end_filtered = chrom_coverage_df.loc[(chrom_coverage_df['coverage'] < end_threshold) & (chrom_coverage_df['pos'] > end), 'pos']
+            start_filtered = chrom_coverage_df.loc[((chrom_coverage_df['coverage'] < start_threshold) | (chrom_coverage_df['coverage'] > start_upper_treshold )) & (chrom_coverage_df['pos'] < start), 'pos']
+            end_filtered = chrom_coverage_df.loc[((chrom_coverage_df['coverage'] < end_threshold) | (chrom_coverage_df['coverage'] > end_upper_treshold )) & (chrom_coverage_df['pos'] > end), 'pos']
 
             extended_start = start_filtered.max() if not start_filtered.empty else start
             extended_end = end_filtered.min() if not end_filtered.empty else end
@@ -69,6 +99,7 @@ def extend_transcripts(gff_df_coverage, coverage_df, threshold=0.1, min_coverage
 
             extended_transcripts.append({
                 "gene_id": row['gene_id'],
+                "feature": row['feature'],
                 "chrom": chrom,
                 "start": start,
                 "end": end,
@@ -81,9 +112,140 @@ def extend_transcripts(gff_df_coverage, coverage_df, threshold=0.1, min_coverage
 
     return pd.DataFrame(extended_transcripts)
 
-def update_gff_from_extended(gff_file, extended_df, output_file):
+# Función para acortar genes, mRNA y exones en caso de solapamiento con CDS en misma hebra
+
+def shorten_overlapping_features(gffExpanded,gff_df):
+    # Filtrar solo las filas relevantes de CDS y otros features
+    cds_df = gff_df[gff_df['feature'] == 'CDS'][['chrom', 'start', 'end', 'strand', 'gene_id']]
+    grouped_cds = cds_df.groupby('chrom')
+    #cds_df.to_csv("cds.tsv", sep="\t")
+
+    shortenGff = []
+
+    for index, row in gffExpanded.iterrows():
+        chrom, start, extended_start, end, extended_end, strand, gene_id = row['chrom'], row['start'], row['extended_start'], row['end'], row['extended_end'], row['strand'], row['gene_id']
+        updated_start = 0
+        updated_end = 0
+
+        if chrom in grouped_cds.groups:
+            chrom_cds_df = grouped_cds.get_group(chrom)
+
+            # Filtrar CDS que están antes del `extended_start` y después del `extended_end` en la misma hebra
+            mask_5end = ((chrom_cds_df['end'] > extended_start) &
+                (chrom_cds_df['end'] < start) &
+                (chrom_cds_df['gene_id'] != gene_id) &
+                (chrom_cds_df['strand'] == strand)
+            )
+            mask_3end = ((chrom_cds_df['start'] < extended_end) &
+                (chrom_cds_df['start'] > end) &
+                (chrom_cds_df['gene_id'] != gene_id) &
+                (chrom_cds_df['strand'] == strand)
+            )
+            filtered_5end = chrom_cds_df['end'][mask_5end].max()
+            filtered_3end = chrom_cds_df['start'][mask_3end].min()
+
+            # Obtener el valor máximo de inicio y el mínimo de fin si hay resultados válidos
+            if not pd.isna(filtered_5end) and extended_start != start:
+                updated_start = filtered_5end + 1
+            if not pd.isna(filtered_3end) and extended_end != end:
+                updated_end = filtered_3end - 1
+
+        final_start = extended_start
+        final_end = extended_end
+        if updated_start != 0:
+            final_start = updated_start
+        # Actualizar el DataFrame expandido con los nuevos valores de inicio y fin
+        if updated_end != 0:
+            final_end = updated_end
+
+        shortenGff.append({
+            "gene_id": row['gene_id'],
+            "feature": row['feature'],
+            "chrom": chrom,
+            "start": start,
+            "end": end,
+            "extended_start": final_start,
+            "extended_end": final_end,
+            "strand": row['strand'],
+        })
+
+    return pd.DataFrame(shortenGff)
+
+def remove_completly_overlapping_extensions(gffExpanded_defined,gff_df):
+    # Filtrar solo las filas relevantes de CDS y otros features
+    cds_df = gff_df[gff_df['feature'] == 'CDS'][['chrom', 'start', 'end', 'strand', 'gene_id']]
+    grouped_cds = cds_df.groupby('chrom')
+    #cds_df.to_csv("cds.tsv", sep="\t")
+
+    finalGff = []
+
+    for index, row in gffExpanded_defined.iterrows():
+        chrom, start, extended_start, end, extended_end, strand, gene_id = row['chrom'], row['start'], row['extended_start'], row['end'], row['extended_end'], row['strand'], row['gene_id']
+
+
+        if chrom in grouped_cds.groups:
+            chrom_cds_df = grouped_cds.get_group(chrom)
+
+            # If covers the start or end point of the CDS
+
+            mask_5end = ((extended_start < chrom_cds_df['start']) &
+                (start > chrom_cds_df['start']) &
+                (chrom_cds_df['gene_id'] != gene_id) &
+                (chrom_cds_df['strand'] == strand)
+            )
+
+            mask_3end = ((extended_end > chrom_cds_df['end']) &
+                (end < chrom_cds_df['end']) &
+                (chrom_cds_df['gene_id'] != gene_id) &
+                (chrom_cds_df['strand'] == strand)
+            )
+
+            # If it's fully covered by another CDS
+
+            mask_5end_fully = ((extended_start > chrom_cds_df['start']) &
+                (extended_start < chrom_cds_df['end']) &
+                (chrom_cds_df['gene_id'] != gene_id) &
+                (chrom_cds_df['strand'] == strand)
+            )
+
+            mask_3end_fully = ((extended_end > chrom_cds_df['start']) &
+                (extended_end < chrom_cds_df['end']) &
+                (chrom_cds_df['gene_id'] != gene_id) &
+                (chrom_cds_df['strand'] == strand)
+            )
+
+            if mask_5end.any() or mask_5end_fully.any():
+                finalExtendedStart = start
+            else:
+                finalExtendedStart = extended_start
+
+            if mask_3end.any() or mask_3end_fully.any():
+                finalExtendedEnd = end
+            else:
+                finalExtendedEnd = extended_end
+
+        finalGff.append({
+            "gene_id": row['gene_id'],
+            "feature": row['feature'],
+            "chrom": chrom,
+            "start": start,
+            "end": end,
+            "extended_start": finalExtendedStart,
+            "extended_end": finalExtendedEnd,
+            "strand": row['strand'],
+        })
+
+    return pd.DataFrame(finalGff)
+
+
+def update_gff_from_extended(gff_file, extended_df,gene2Trans, output_file):
+    if extended_df['feature'].str.contains('transcript', regex=True).any():
+        transcriptName = "transcript"
+    if extended_df['feature'].str.contains('mRNA', regex=True).any():
+        transcriptName = "mRNA"
     with open(gff_file, 'r') as infile, open(output_file, 'w+') as outfile:
         for line in infile:
+
             # Escribir comentarios y encabezado sin modificar
             if line.startswith("#"):
                 outfile.write(line)
@@ -95,8 +257,10 @@ def update_gff_from_extended(gff_file, extended_df, output_file):
 
             # Identificar el ID adecuado para buscar en `extended_df`
             if feature == "gene":
-                gene_id = attributes["ID"] + ".mrna"  # ID sin ".mrna"
-            elif feature == "transcript":
+                if attributes["ID"] not in gene2Trans.keys():
+                    continue
+                gene_id = gene2Trans[attributes["ID"]]  # ID sin ".mrna"
+            elif feature == transcriptName:
                 gene_id = attributes["ID"]  # ID con ".mrna"
             elif feature == "exon":
                 gene_id = attributes["Parent"]  # transcript_id para exones
@@ -120,6 +284,7 @@ def update_gff_from_extended(gff_file, extended_df, output_file):
 
             # Escribir la línea actualizada en el archivo de salida
             outfile.write("\t".join(parts) + "\n")
+
 if __name__ == '__main__':
 
     from datetime import datetime
@@ -131,10 +296,10 @@ if __name__ == '__main__':
         threshold = float(threshold)
         minReads = int(minReads)
     except:
-        print("error: utr.bam.extender.py covPlusPath, covMinusPath, gff, outPath")
+        print("error: utr.bam.extender.py covPlusPath, covMinusPath, gff, threshold of coverage (in %), minReads, outPath")
         sys.exit()
 
-    # Leer archivos
+    # Read files
     print("Reading positive bedgraph...")
     start_time = datetime.now()
     positive_bedgraph_df = read_coverage(covPlusPath)
@@ -148,40 +313,59 @@ if __name__ == '__main__':
     start_time = datetime.now()
     print("Reading gff file...")
     gff_df = gff2pd(gff)
+    g2t = geneId2transcriptId(gff)
     end_time = datetime.now()
     print('Duration: {}'.format(end_time - start_time))
-    # Calcular los picos para cada CDS en función de la cadena
+
+    # Estimating peaks at each side
+
     start_time = datetime.now()
-    print("Estimating maximum coverage per transcript + strand...")
+    print("Estimating peaks at 5' and 3' per transcript + strand...")
     positive_max_coverage_df = calculate_max_coverage(gff_df[gff_df['strand'] == '+'], positive_bedgraph_df)
     end_time = datetime.now()
     print('Duration: {}'.format(end_time - start_time))
     start_time = datetime.now()
-    print("Estimating maximum coverage per transcript - strand...")
+    print("Estimating peaks at 5' and 3' per transcript - strand...")
     negative_max_coverage_df = calculate_max_coverage(gff_df[gff_df['strand'] == '-'], negative_bedgraph_df)
     end_time = datetime.now()
     print('Duration: {}'.format(end_time - start_time))
 
-    # Combinar los resultados
+    # Extending transcripts until first position under the threshold
 
     start_time = datetime.now()
-    print("Extending CDSs according to coverage + strand...")
+    print("Extending transcripts according to coverage + strand...")
     positive_extended_df = extend_transcripts(positive_max_coverage_df, positive_bedgraph_df, threshold = threshold, min_coverage = minReads)
     end_time = datetime.now()
     print('Duration: {}'.format(end_time - start_time))
     start_time = datetime.now()
-    print("Extending CDSs according to coverage - strand...")
+    print("Extending transcripts according to coverage - strand...")
     negative_extended_df = extend_transcripts(negative_max_coverage_df, negative_bedgraph_df, threshold = threshold, min_coverage = minReads)
     end_time = datetime.now()
     print('Duration: {}'.format(end_time - start_time))
-
+    # Concatenate both strands
     extended_df = pd.concat([positive_extended_df, negative_extended_df])
+
+    # Limit the extension to other CDSs
+
+    start_time = datetime.now()
+    print("Adjusting UTRs for not overlapping CDSs...")
+    adjusted_df = shorten_overlapping_features(extended_df, gff_df)
+    end_time = datetime.now()
+    print('Duration: {}'.format(end_time - start_time))
+
+    # Remove UTRs that still overlapping CDSs
+
+    start_time = datetime.now()
+    print("Removing remaining UTRs overlapping CDSs...")
+    final_df = remove_completly_overlapping_extensions(adjusted_df, gff_df)
+    end_time = datetime.now()
+    print('Duration: {}'.format(end_time - start_time))
+
+
+    # Translate from pandas dataframe to gff
 
     start_time = datetime.now()
     print("Updating gff...")
-    update_gff_from_extended(gff, extended_df, outPath)
+    update_gff_from_extended(gff, final_df, g2t, outPath)
     end_time = datetime.now()
     print('Done in: {}'.format(end_time - start_time))
-
-    #extended_df.to_csv(outPath, sep = "\t", header=False, index=False)
-    #print(max_coverage_df)
