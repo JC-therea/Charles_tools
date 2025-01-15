@@ -21,6 +21,7 @@ mkdir -p "$output_dir"
 
 # Nombre del archivo de salida
 output_gff="${output_dir}/$(basename "$input_gff" .gff)_extended.gff"
+output_gtf_agat="${output_dir}/$(basename "$input_gff" .gff)_extended.agat.gtf"
 
 # Procesar el archivo
 awk 'BEGIN {OFS="\t"}
@@ -30,4 +31,11 @@ awk 'BEGIN {OFS="\t"}
     }
     { print }' "$input_gff" > "$output_gff"
 
-echo "output file: $output_gff"
+echo "Fixing exon ends and defining UTR regions with agat..."
+
+# Now fix with agat
+
+source ~/mambaforge/bin/activate agatTest
+
+agat_convert_sp_gff2gtf.pl --gff $output_gff -o $output_gtf_agat > textFromAgat.out
+echo "output file: $output_gtf_agat"
