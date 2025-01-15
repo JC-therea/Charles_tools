@@ -252,7 +252,7 @@ def msaOrfs(genePredsPaths,orthologTablePath,MsaDirPath,outFilePath):
                             pedId, perMiss, perRefGap, perOutGap = GetPerIdPerGap(refSeq[refStartMsa:refEndMsa], outSeq[refStartMsa:refEndMsa])
 
 
-                            outfile.write(f"{orfID}\t{OGID}\t{refStartMsa}\t{refEndMsa}\t{coordsOutStartOrf}\t{coordsOutEndOrf}\t{outSpecies}\t{outOrf}\t{outStartMsa}\t{outEndMsa}\t{outStartOrf}\t{outEndOrf}\t{nuclOverlapping}\t{overlapType}\t{pedId}\t{perRefGap}\t{perOutGap}\n")
+                            outfile.write(f"{orfID}\t{OGID}\t{refStartMsa}\t{refEndMsa}\t{refRibORFstart}\t{refRibORFend}\t{outSpecies}\t{outOrf}\t{outStartMsa}\t{outEndMsa}\t{outStartOrf}\t{outEndOrf}\t{nuclOverlapping}\t{overlapType}\t{pedId}\t{perRefGap}\t{perOutGap}\n")
 
 
 # Program starts here
