@@ -260,7 +260,7 @@ def msaOrfs(genePredsPaths,orthologTablePath,MsaDirPath,outFilePath):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description="This programs needs the config file to work with the desired species",
+    parser = argparse.ArgumentParser(description="This program is used to extract orfs aligned",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("-i", "--ORFlists", default="", type=str, help="path of all the genePredFiles, first will be used as reference")
     parser.add_argument("-orth", "--orthologs", default="", type=str, help="path to the tsv file that indicates the orthology of the genes")
