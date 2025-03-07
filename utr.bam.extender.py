@@ -188,13 +188,13 @@ def remove_completly_overlapping_extensions(gffExpanded_defined,gff_df):
 
             # If covers the start or end point of the CDS
 
-            mask_5end = ((extended_start < chrom_cds_df['start']) &
+            mask_5end = ((extended_start <= chrom_cds_df['start']) &
                 (start > chrom_cds_df['start']) &
                 (chrom_cds_df['gene_id'] != gene_id) &
                 (chrom_cds_df['strand'] == strand)
             )
 
-            mask_3end = ((extended_end > chrom_cds_df['end']) &
+            mask_3end = ((extended_end >= chrom_cds_df['end']) &
                 (end < chrom_cds_df['end']) &
                 (chrom_cds_df['gene_id'] != gene_id) &
                 (chrom_cds_df['strand'] == strand)
