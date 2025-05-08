@@ -250,14 +250,32 @@ def msaOrfs(genePredsPaths,orthologTablePath,species,pwDirPath,outFilePath):
 
                     outSequenceId = sequenceIds[1]
                     outSeq = sequences[outSequenceId].seq.upper()
-
                     coordsOutStartOrf, coordsOutEndOrf = coordMsa2Transcript(outSeq, refStartMsa, refEndMsa)
 
                     innerOutGPred = outGenePredSubset[((outGenePredSubset["transcriptInit"] >= coordsOutStartOrf) & (outGenePredSubset["transcriptInit"] <= coordsOutEndOrf) ) |
                                                  ((outGenePredSubset["transcriptEnd"] > coordsOutStartOrf) & (outGenePredSubset["transcriptEnd"] < coordsOutEndOrf))
                                             ]
                     if innerOutGPred.empty:
+                        outAlignment = outSeq[refStartMsa: refEndMsa]
+                        if set(outAlignment) == {'-'}:
+                            outOrf = "noUtr"
+                            outStartOrf = 0
+                            outEndOrf = 0
+                            outStartMsa, outEndMsa = 0,0
+                            overlapType, nuclOverlapping = "noUtr", 0
+                            pedId, perMiss, perRefGap, perOutGap = 0,0,0,0
+                            outfile.write(f"{orfID}\t{refTranscriptName}\t{refStartMsa}\t{refEndMsa}\t{refRibORFstart}\t{refRibORFend}\t{outSpecies}\t{outOrf}\t{outStartMsa}\t{outEndMsa}\t{outStartOrf}\t{outEndOrf}\t{nuclOverlapping}\t{overlapType}\t{pedId}\t{perRefGap}\t{perOutGap}\n")
+                            continue
+
+                        outOrf = "noOrfFound"
+                        outStartOrf = 0
+                        outEndOrf = 0
+                        outStartMsa, outEndMsa = 0,0
+                        overlapType, nuclOverlapping = "noOrfFound", 0
+                        pedId, perMiss, perRefGap, perOutGap = 0,0,0,0
+                        outfile.write(f"{orfID}\t{refTranscriptName}\t{refStartMsa}\t{refEndMsa}\t{refRibORFstart}\t{refRibORFend}\t{outSpecies}\t{outOrf}\t{outStartMsa}\t{outEndMsa}\t{outStartOrf}\t{outEndOrf}\t{nuclOverlapping}\t{overlapType}\t{pedId}\t{perRefGap}\t{perOutGap}\n")
                         continue
+
                     for indexOutOrf, rowOutOrf in innerOutGPred.iterrows():
                         # First add the information of the reference
                         outOrf = rowOutOrf["orfID"]
