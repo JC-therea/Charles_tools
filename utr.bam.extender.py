@@ -1,10 +1,10 @@
 
 
-# Función para leer el bedgraph en un DataFrame
+# Read bedgraph as dataframe
 def read_coverage(file):
     return pd.read_csv(file, sep='\t', header=None, names=['chrom', 'pos', 'coverage'])
 
-# Función para leer el GFF y extraer las coordenadas de las CDS
+# read gff to extract cds coordinates
 def gff2pd(file):
     regions = []
     with open(file, 'r') as f:
@@ -43,7 +43,7 @@ def geneId2transcriptId(file):
     return geneId2transcriptId
 
 
-# Función para calcular el pico máximo en cada CDS
+# estimate max peak in each CDS
 def calculate_max_coverage(gff_df, coverage_df):
     if gff_df['feature'].str.contains('transcript', regex=True).any():
         transcriptName = "transcript"
@@ -112,7 +112,7 @@ def extend_transcripts(gff_df_coverage, coverage_df, threshold=0.1, min_coverage
 
     return pd.DataFrame(extended_transcripts)
 
-# Función para acortar genes, mRNA y exones en caso de solapamiento con CDS en misma hebra
+# shorten genes, mRNA and exons if the overlap another CDS in same strand
 
 def shorten_overlapping_features(gffExpanded,gff_df):
     # Filtrar solo las filas relevantes de CDS y otros features
@@ -172,7 +172,7 @@ def shorten_overlapping_features(gffExpanded,gff_df):
     return pd.DataFrame(shortenGff)
 
 def remove_completly_overlapping_extensions(gffExpanded_defined,gff_df):
-    # Filtrar solo las filas relevantes de CDS y otros features
+    # filter only relevant features
     cds_df = gff_df[gff_df['feature'] == 'CDS'][['chrom', 'start', 'end', 'strand', 'gene_id']]
     grouped_cds = cds_df.groupby('chrom')
     #cds_df.to_csv("cds.tsv", sep="\t")
@@ -246,7 +246,7 @@ def update_gff_from_extended(gff_file, extended_df,gene2Trans, output_file):
     with open(gff_file, 'r') as infile, open(output_file, 'w+') as outfile:
         for line in infile:
 
-            # Escribir comentarios y encabezado sin modificar
+            # keep comments
             if line.startswith("#"):
                 outfile.write(line)
                 continue
@@ -255,21 +255,21 @@ def update_gff_from_extended(gff_file, extended_df,gene2Trans, output_file):
             chrom, feature, start, end, strand, attr = parts[0], parts[2], int(parts[3]), int(parts[4]), parts[6], parts[8]
             attributes = dict(field.split("=") for field in attr.split(";"))
 
-            # Identificar el ID adecuado para buscar en `extended_df`
+            # keep id fot searching in `extended_df`
             if feature == "gene":
                 if attributes["ID"] not in gene2Trans.keys():
                     continue
-                gene_id = gene2Trans[attributes["ID"]]  # ID sin ".mrna"
+                gene_id = gene2Trans[attributes["ID"]]  # ID without ".mrna"
             elif feature == transcriptName:
-                gene_id = attributes["ID"]  # ID con ".mrna"
+                gene_id = attributes["ID"]  # ID with ".mrna"
             elif feature == "exon":
                 gene_id = attributes["Parent"]  # transcript_id para exones
             else:
-                # Si no es un feature relevante, escribir la línea original
+                # if not a relevant feature write the line as it is
                 outfile.write(line)
                 continue
 
-            # Buscar las posiciones extendidas en `extended_df`
+            # search for extended positions in `extended_df`
             extended_row = extended_df[(extended_df["gene_id"] == gene_id) & (extended_df["chrom"] == chrom)]
             if not extended_row.empty:
                 if extended_row["start"].values[0] == start:
@@ -282,7 +282,7 @@ def update_gff_from_extended(gff_file, extended_df,gene2Trans, output_file):
                     new_end = end
                 parts[3], parts[4] = str(new_start), str(new_end)
 
-            # Escribir la línea actualizada en el archivo de salida
+            # write the updated line
             outfile.write("\t".join(parts) + "\n")
 
 if __name__ == '__main__':
